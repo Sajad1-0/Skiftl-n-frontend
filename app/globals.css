@@ -1,26 +1,42 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
+  /* Primary brand color (blue) */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+
+  /* Secondary / background */
   --background: #ffffff;
-  --foreground: #171717;
-}
+  --foreground: #1e1e1e;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Card surfaces */
+  --card: #ffffff;
+  --card-foreground: #1e1e1e;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+  /* Muted / subtle text */
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Border / separators */
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+
+  /* Accent colors */
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+
+  /* Premium (green) */
+  --premium: #22c55e;
+  --premium-foreground: #ffffff;
+
+  /* OB-tillägg (purple) */
+  --ob: #8b5cf6;
+  --ob-foreground: #ffffff;
+
+  /* Warning / error */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  /* Radius */
+  --radius: 0.5rem;
 }
