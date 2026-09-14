@@ -2,8 +2,10 @@ import type {
   ApiError,
   ApiSuccess,
   AuthSuccessData,
+  CreateJobProfileBody,
   LoginBody,
   PublicUser,
+  PublicJobProfile,
   RegisterBody,
 } from './types';
 import { getToken } from './auth-storage';
@@ -14,6 +16,16 @@ if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL saknas');
 
 async function parseJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
+}
+
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  if (!token) throw new Error('Ingen token — logga in igen');
+
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
 }
 
 export async function register(body: RegisterBody): Promise<AuthSuccessData> {
@@ -55,7 +67,7 @@ export async function getCurrentUser(): Promise<PublicUser> {
 
   const response = await fetch(`${API_URL}/auth/me`, {
     method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeaders(),
   });
 
   const json = await parseJson<ApiSuccess<PublicUser> | ApiError>(response);
@@ -65,4 +77,48 @@ export async function getCurrentUser(): Promise<PublicUser> {
   }
 
   return json.data;
+}
+
+export async function listJobProfiles(): Promise<PublicJobProfile[]> {
+  const response = await fetch(`${API_URL}/job-profiles`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicJobProfile[]> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta jobbProfiler');
+  }
+
+  return json.data;
+}
+
+export async function createJobProfile(body: CreateJobProfileBody): Promise<PublicJobProfile> {
+  const response = await fetch(`${API_URL}/job-profiles`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicJobProfile> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte skapa jobbprofil');
+  }
+
+  return json.data;
+}
+
+export async function deleteJobProfile(id: string): Promise<void> {
+  const response = await fetch(`${API_URL}/job-profiles/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<null> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte ta bort jobbprofil');
+  }
 }
