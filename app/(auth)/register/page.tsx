@@ -3,8 +3,15 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState } from 'react';
-import { register } from '@/app/lib/api';
-import { saveToken } from '@/app/lib/auth-storage';
+import { ArrowRight } from 'lucide-react';
+import { Logo } from '@/components/brand/logo';
+import { FadeIn } from '@/components/motion/fade-in';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { register } from '@/lib/api';
+import { saveToken } from '@/lib/auth-storage';
 
 interface FormState {
   error: string | null;
@@ -41,85 +48,102 @@ export default function RegisterPage() {
   );
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Skapa konto</h1>
-      <p className="mt-2 text-sm text-foreground/70">
-        Registrera dig för att logga arbetstid och se din lön.
-      </p>
+    <FadeIn>
+      <Card className="border-border/60 shadow-lg shadow-primary/5">
+        <CardHeader className="space-y-4 pb-4">
+          <Logo href="/" size="lg" showWordmark />
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-semibold tracking-tight">Skapa konto.</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Registrera dig för att logga arbetstid och se din lön.
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form action={formAction} className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-muted-foreground">
+                  Förnamn
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  name="firstName"
+                  required
+                  minLength={2}
+                  autoComplete="given-name"
+                  placeholder="Anna"
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-muted-foreground">
+                  Efternamn
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  name="lastName"
+                  autoComplete="family-name"
+                  placeholder="Andersson"
+                  className="h-11"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-muted-foreground">
+                E-post
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                name="email"
+                required
+                autoComplete="email"
+                placeholder="namn@email.com"
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-muted-foreground">
+                Lösenord
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                name="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Minst 8 tecken"
+                className="h-11"
+              />
+            </div>
 
-      <form action={formAction} className="mt-8 flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          Förnamn
-          <input
-            type="text"
-            name="firstName"
-            required
-            minLength={2}
-            autoComplete="given-name"
-            placeholder="John"
-            className="rounded-md border border-foreground/15 bg-background px-3 py-2 text-base outline-none focus:border-foreground/40"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          Efternamn
-          <input
-            type="text"
-            name="lastName"
-            autoComplete="family-name"
-            placeholder="Doe"
-            className="rounded-md border border-foreground/15 bg-background px-3 py-2 text-base outline-none focus:border-foreground/40"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          E-post
-          <input
-            type="email"
-            name="email"
-            required
-            autoComplete="email"
-            placeholder="example@email.com"
-            className="rounded-md border border-foreground/15 bg-background px-3 py-2 text-base outline-none focus:border-foreground/40"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          Lösenord
-          <input
-            type="password"
-            name="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            placeholder="Minst 8 tecken"
-            className="rounded-md border border-foreground/15 bg-background px-3 py-2 text-base outline-none focus:border-foreground/40"
-          />
-        </label>
+            {state.error ? (
+              <p
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {state.error}
+              </p>
+            ) : null}
 
-        {state.error ? (
-          <p
-            className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300"
-            role="alert"
-          >
-            {state.error}
+            <Button type="submit" disabled={isPending} size="lg" className="mt-1 h-11 w-full gap-2">
+              {isPending ? 'Skapar konto…' : 'Registrera'}
+              <ArrowRight className="size-4" />
+            </Button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Har du redan konto?{' '}
+            <Link href="/login" className="font-medium text-foreground underline underline-offset-4">
+              Logga in
+            </Link>
           </p>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={isPending}
-          className="mt-2 rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-background disabled:opacity-60"
-        >
-          {isPending ? 'Skapar konto...' : 'Registrera'}
-        </button>
-      </form>
-      <p className="mt-6 text-sm text-foreground/70">
-        Har du redan konto?{' '}
-        <Link
-          href="/login"
-          className="font-medium text-foreground underline-offset-4 hover:underline"
-        >
-          Logga in
-        </Link>
-      </p>
-    </main>
+        </CardContent>
+      </Card>
+    </FadeIn>
   );
 }

@@ -9,6 +9,25 @@ export interface PublicUser {
   updatedAt: string;
 }
 
+export interface PublicJobProfile {
+  id: string;
+  userId: string;
+  name: string;
+  hourlyWage: number; // Öre
+  taxRate: number;
+  employerName: string | null;
+  isPrimary: boolean;
+  createdAt: string;
+}
+
+export interface CreateJobProfileBody {
+  name: string;
+  hourlyWage: number;
+  taxRate: number;
+  employerName?: string;
+  isPrimary?: boolean;
+}
+
 export interface AuthSuccessData {
   token: string;
   user: PublicUser;
