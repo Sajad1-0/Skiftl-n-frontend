@@ -3,9 +3,11 @@ import type {
   ApiSuccess,
   AuthSuccessData,
   CreateJobProfileBody,
+  CreateShiftBody,
   LoginBody,
   PublicUser,
   PublicJobProfile,
+  PublicShift,
   RegisterBody,
 } from './types';
 import { getToken } from './auth-storage';
@@ -120,5 +122,54 @@ export async function deleteJobProfile(id: string): Promise<void> {
 
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte ta bort jobbprofil');
+  }
+}
+
+export async function listShifts(params?: { from?: string; to?: string }): Promise<PublicShift[]> {
+  const search = new URLSearchParams();
+  if (params?.from) search.set('from', params.from);
+  if (params?.to) search.set('to', params.to);
+  const qs = search.toString();
+
+  const response = await fetch(`${API_URL}/shifts${qs ? `?${qs}` : ''}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicShift[]> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta pass');
+  }
+
+  return json.data;
+}
+
+export async function createShift(body: CreateShiftBody): Promise<PublicShift> {
+  const response = await fetch(`${API_URL}/shifts`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicShift> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte skapa passet');
+  }
+
+  return json.data;
+}
+
+export async function deleteShift(id: string): Promise<void> {
+  const response = await fetch(`${API_URL}/shifts/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<null> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte ta bort passet');
   }
 }

@@ -2,14 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  Briefcase,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Search,
-  X,
-} from 'lucide-react';
+import { Briefcase, LayoutDashboard, LogOut, Clock, Menu, Search, X } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
@@ -20,6 +13,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/job-profiles', label: 'Jobbprofiler', icon: Briefcase },
+  { href: '/shifts', label: 'Pass', icon: Clock },
 ] as const;
 
 interface AppShellProps {
