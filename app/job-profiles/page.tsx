@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
@@ -17,50 +16,44 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { deleteJobProfile, getCurrentUser, listJobProfiles } from '@/lib/api';
-import { clearToken, getToken } from '@/lib/auth-storage';
+import { useAuthUser } from '@/hooks/use-auth-user';
+import { deleteJobProfile, listJobProfiles } from '@/lib/api';
 import { formatKronor } from '@/lib/money';
-import type { PublicJobProfile, PublicUser } from '@/lib/types';
+import type { PublicJobProfile } from '@/lib/types';
 
 export default function JobProfilesPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<PublicUser | null>(null);
+  const { user, userName, isLoading: authLoading, error: authError } = useAuthUser();
   const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [profilesLoading, setProfilesLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (!user) return;
+
     let cancelled = false;
 
-    async function load() {
-      if (!getToken()) {
-        router.replace('/login');
-        return;
-      }
-
+    async function loadProfiles() {
       try {
-        const [me, data] = await Promise.all([getCurrentUser(), listJobProfiles()]);
+        const data = await listJobProfiles();
         if (!cancelled) {
-          setUser(me);
           setProfiles(data);
+          setError(null);
         }
       } catch (loadError) {
-        clearToken();
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : 'Kunde inte ladda profiler');
         }
-        router.replace('/login');
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setProfilesLoading(false);
       }
     }
 
-    void load();
+    void loadProfiles();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [user]);
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -73,9 +66,8 @@ export default function JobProfilesPage() {
     });
   }
 
-  const userName = user
-    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
-    : undefined;
+  const isLoading = authLoading || (!!user && profilesLoading);
+  const displayError = error ?? authError;
 
   if (isLoading) {
     return (
@@ -103,12 +95,12 @@ export default function JobProfilesPage() {
           </Button>
         </div>
 
-        {error ? (
+        {displayError ? (
           <p
             className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
             role="alert"
           >
-            {error}
+            {displayError}
           </p>
         ) : null}
 

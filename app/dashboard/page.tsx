@@ -1,8 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Clock, Plus } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
@@ -18,48 +16,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getCurrentUser } from '@/lib/api';
-import { clearToken, getToken } from '@/lib/auth-storage';
+import { useMonthShiftStats } from '@/hooks/use-month-shift-stats';
 import { formatKronor } from '@/lib/money';
-import type { PublicUser } from '@/lib/types';
+import { MONTHLY_HOUR_TARGET } from '@/lib/shift-stats';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<PublicUser | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadUser() {
-      if (!getToken()) {
-        router.replace('/login');
-        return;
-      }
-
-      try {
-        const me = await getCurrentUser();
-        if (!cancelled) {
-          setUser(me);
-        }
-      } catch (loadError) {
-        clearToken();
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : 'Kunde inte ladda profil');
-        }
-        router.replace('/login');
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-    void loadUser();
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+  const { user, userName, shifts, stats, isLoading, error } = useMonthShiftStats();
 
   if (isLoading) {
     return (
@@ -82,11 +44,14 @@ export default function DashboardPage() {
 
   const displayName = user.firstName;
   const goalOre = user.monthlySalaryGoal;
-  // Progress kopplas till skift-API när det finns
-  const goalProgress = 0;
+  const hoursProgress = Math.min(100, Math.round((stats.hours / MONTHLY_HOUR_TARGET) * 100));
+
+  const recentShifts = [...shifts]
+    .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
+    .slice(0, 5);
 
   return (
-    <AppShell userName={`${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`}>
+    <AppShell userName={userName}>
       <FadeIn className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -98,47 +63,52 @@ export default function DashboardPage() {
             </p>
           </div>
           <Button asChild size="lg" className="h-10 gap-1.5 self-start sm:self-auto">
-            <Link href="/job-profiles">
+            <Link href="/shifts/new">
               <Plus className="size-4" />
-              Jobbprofiler
+              Logga pass
             </Link>
           </Button>
         </div>
-
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
               <div>
                 <CardTitle>Månadsöversikt</CardTitle>
-                <CardDescription>Timmar och beräknad lön (kommer med skift-API)</CardDescription>
+                <CardDescription>Timmar och beräknad bruttolön denna månad</CardDescription>
               </div>
               <Badge variant="secondary">{user.isPremium ? 'Premium' : 'Gratis'}</Badge>
             </CardHeader>
             <CardContent className="space-y-5">
               <div>
                 <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">0 av 160 timmar</span>
-                  <span className="font-medium tabular-nums">0%</span>
+                  <span className="text-muted-foreground">
+                    {stats.hours.toFixed(1)} av {MONTHLY_HOUR_TARGET} timmar
+                  </span>
+                  <span className="font-medium tabular-nums">{hoursProgress}%</span>
                 </div>
                 <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full w-0 rounded-full bg-primary transition-all" />
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${hoursProgress}%` }}
+                  />
                 </div>
               </div>
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Beräknad lön</p>
-                  <p className="text-2xl font-semibold tabular-nums">{formatKronor(0)}</p>
+                  <p className="text-sm text-muted-foreground">Beräknad lön (brutto)</p>
+                  <p className="text-2xl font-semibold tabular-nums">
+                    {formatKronor(stats.totalGrossOre)}
+                  </p>
                 </div>
                 <Button asChild variant="outline">
-                  <Link href="/job-profiles">
+                  <Link href="/shifts">
                     <Clock className="size-4" />
-                    Förbered jobbprofil
+                    Visa alla pass
                   </Link>
                 </Button>
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Lönemål</CardTitle>
@@ -147,14 +117,15 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-3 pb-6">
-              <CircularProgress value={goalProgress} label="av mål" />
+              <CircularProgress value={stats.goalProgress} label="av mål" />
               <p className="text-sm text-muted-foreground">
-                Progress syns när du loggat skift.
+                {stats.shiftCount === 0
+                  ? 'Progress syns när du loggat skift.'
+                  : `${stats.shiftCount} pass · ${stats.hours.toFixed(1)} h`}
               </p>
             </CardContent>
           </Card>
         </div>
-
         <FadeIn delayMs={80}>
           <Card>
             <CardHeader>
@@ -166,16 +137,33 @@ export default function DashboardPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Anteckning</TableHead>
-                    <TableHead>Jobbprofil</TableHead>
+                    <TableHead>Tid</TableHead>
                     <TableHead className="text-right">Belopp</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={3} className="py-10 text-center text-muted-foreground">
-                      Inga skift ännu. Skiftloggning kommer i nästa steg.
-                    </TableCell>
-                  </TableRow>
+                  {recentShifts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="py-10 text-center text-muted-foreground">
+                        Inga skift ännu.{' '}
+                        <Link href="/shifts/new" className="underline underline-offset-4">
+                          Logga ditt första
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    recentShifts.map((shift) => (
+                      <TableRow key={shift.id}>
+                        <TableCell>{shift.notes ?? '—'}</TableCell>
+                        <TableCell className="tabular-nums">
+                          {(shift.workedMinutes / 60).toFixed(1)} h
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatKronor(shift.grossOre)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

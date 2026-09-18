@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createShift, getCurrentUser, listJobProfiles } from '@/lib/api';
-import { clearToken, getToken } from '@/lib/auth-storage';
-import type { PublicJobProfile, PublicUser } from '@/lib/types';
+import { useAuthUser } from '@/hooks/use-auth-user';
+import { createShift, listJobProfiles } from '@/lib/api';
+import type { PublicJobProfile } from '@/lib/types';
 
 interface FormState {
   error: string | null;
@@ -26,24 +26,37 @@ function localInputToIso(value: string): string {
 
 export default function NewShiftPage() {
   const router = useRouter();
-  const [user, setUser] = useState<PublicUser | null>(null);
+  const { user, userName, isLoading: authLoading } = useAuthUser();
   const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
+  const [profilesLoading, setProfilesLoading] = useState(true);
+  const [profilesError, setProfilesError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace('/login');
-      return;
+    if (!user) return;
+
+    let cancelled = false;
+
+    async function loadProfiles() {
+      try {
+        const list = await listJobProfiles();
+        if (!cancelled) {
+          setProfiles(list);
+          setProfilesError(null);
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setProfilesError(err instanceof Error ? err.message : 'Kunde inte ladda jobbprofiler');
+        }
+      } finally {
+        if (!cancelled) setProfilesLoading(false);
+      }
     }
-    void Promise.all([getCurrentUser(), listJobProfiles()])
-      .then(([me, list]) => {
-        setUser(me);
-        setProfiles(list);
-      })
-      .catch(() => {
-        clearToken();
-        router.replace('/login');
-      });
-  }, [router]);
+
+    void loadProfiles();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const [state, formAction, isPending] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
@@ -72,21 +85,28 @@ export default function NewShiftPage() {
           breakMinutes,
           notes: notes.length > 0 ? notes : undefined,
         });
+        router.push('/shifts');
+        return { error: null };
       } catch (error) {
         return {
           error: error instanceof Error ? error.message : 'Kunde inte skapa pass',
         };
       }
-      return { error: null };
     },
     initialState,
   );
 
-  const userName = user
-    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
-    : undefined;
-
   const primaryId = profiles.find((p) => p.isPrimary)?.id ?? profiles[0]?.id;
+
+  const isLoading = authLoading || (!!user && profilesLoading);
+
+  if (isLoading) {
+    return (
+      <AppShell userName={userName}>
+        <p className="text-sm text-muted-foreground">Laddar…</p>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell userName={userName}>
@@ -99,7 +119,9 @@ export default function NewShiftPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {profiles.length === 0 ? (
+            {profilesError ? (
+              <p className="text-sm text-destructive">{profilesError}</p>
+            ) : profiles.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Du behöver en jobbprofil först.{' '}
                 <Link href="/job-profiles/new" className="underline underline-offset-4">

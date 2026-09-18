@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
@@ -16,19 +15,10 @@ import {
   TableRow,
   TableCell,
 } from '@/components/ui/table';
-import { deleteShift, getCurrentUser, listJobProfiles, listShifts } from '@/lib/api';
-import { clearToken, getToken } from '@/lib/auth-storage';
 import { formatKronor } from '@/lib/money';
-import type { PublicJobProfile, PublicShift, PublicUser } from '@/lib/types';
-
-function monthBounds(): { from: string; to: string } {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const ymd = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  return { from: ymd(from), to: ymd(to) };
-}
+import { listJobProfiles, deleteShift } from '@/lib/api';
+import type { PublicJobProfile } from '@/lib/types';
+import { useMonthShiftStats } from '@/hooks/use-month-shift-stats';
 
 function formatWhen(iso: string): string {
   return new Intl.DateTimeFormat('sv-SE', {
@@ -38,54 +28,29 @@ function formatWhen(iso: string): string {
 }
 
 export default function ShiftPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<PublicUser | null>(null);
-  const [profiles, setProfile] = useState<PublicJobProfile[]>([]);
-  const [shifts, setShifts] = useState<PublicShift[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { userName, shifts, stats, isLoading, error, setShifts, setError } = useMonthShiftStats();
+  const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     let cancelled = false;
-
-    async function load() {
-      if (!getToken) {
-        router.replace('/login');
-        return;
-      }
-
-      try {
-        const bounds = monthBounds();
-        const [me, data, jobProfiles] = await Promise.all([
-          getCurrentUser(),
-          listShifts(bounds),
-          listJobProfiles(),
-        ]);
-        if (!cancelled) {
-          setUser(me);
-          setShifts(data);
-          setProfile(jobProfiles);
-        }
-      } catch (err) {
-        clearToken();
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Kunde inte ladda pass');
-        router.replace('/login');
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-    void load();
+    void listJobProfiles()
+      .then((data) => {
+        if (!cancelled) setProfiles(data);
+      })
+      .catch(() => {
+        /* profilnamn faller tillbaka till "Okänd profil" */
+      });
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   function handleDelete(id: string) {
     startTransition(async () => {
       try {
         await deleteShift(id);
-        setShifts((cur) => cur.filter((s) => s.id !== id));
+        setShifts((current) => current.filter((shift) => shift.id !== id));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Kunde inte ta bort pass');
       }
@@ -93,10 +58,6 @@ export default function ShiftPage() {
   }
 
   const profileName = (id: string) => profiles.find((p) => p.id === id)?.name ?? 'Okänd profil';
-
-  const userName = user
-    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
-    : undefined;
 
   if (isLoading) {
     return (
@@ -112,7 +73,10 @@ export default function ShiftPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Pass</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Dina arbtespass denna månad</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {stats.shiftCount} pass · {stats.hours.toFixed(1)} h ·{' '}
+              {formatKronor(stats.totalGrossOre)} brutto
+            </p>
           </div>
           <Button asChild className="gap-1.5 self-start">
             <Link href="/shifts/new">
@@ -121,9 +85,7 @@ export default function ShiftPage() {
             </Link>
           </Button>
         </div>
-
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
         <Card>
           <CardHeader>
             <CardTitle>Denna månad</CardTitle>
