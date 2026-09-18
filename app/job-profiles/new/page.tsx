@@ -2,17 +2,16 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createJobProfile, getCurrentUser } from '@/lib/api';
-import { clearToken, getToken } from '@/lib/auth-storage';
+import { useAuthUser } from '@/hooks/use-auth-user';
+import { createJobProfile } from '@/lib/api';
 import { kronorToOre } from '@/lib/money';
-import type { PublicUser } from '@/lib/types';
 
 interface FormState {
   error: string | null;
@@ -22,20 +21,7 @@ const initialState: FormState = { error: null };
 
 export default function NewJobProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<PublicUser | null>(null);
-
-  useEffect(() => {
-    if (!getToken()) {
-      router.replace('/login');
-      return;
-    }
-    void getCurrentUser()
-      .then(setUser)
-      .catch(() => {
-        clearToken();
-        router.replace('/login');
-      });
-  }, [router]);
+  const { userName, isLoading: authLoading } = useAuthUser();
 
   const [state, formAction, isPending] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
@@ -72,9 +58,13 @@ export default function NewJobProfilePage() {
     initialState,
   );
 
-  const userName = user
-    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
-    : undefined;
+  if (authLoading) {
+    return (
+      <AppShell>
+        <p className="text-sm text-muted-foreground">Laddar…</p>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell userName={userName}>

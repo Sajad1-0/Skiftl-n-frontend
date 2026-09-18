@@ -28,6 +28,27 @@ export interface CreateJobProfileBody {
   isPrimary?: boolean;
 }
 
+export interface PublicShift {
+  id: string;
+  userId: string;
+  jobProfileId: string;
+  startAt: string;
+  endAt: string;
+  breakMinutes: number;
+  notes: string | null;
+  createdAt: string;
+  workedMinutes: number;
+  grossOre: number;
+}
+
+export interface CreateShiftBody {
+  jobProfileId: string;
+  startAt: string;
+  endAt: string;
+  breakMinutes?: number;
+  notes?: string;
+}
+
 export interface AuthSuccessData {
   token: string;
   user: PublicUser;
