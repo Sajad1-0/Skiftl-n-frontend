@@ -17,13 +17,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useMonthShiftStats } from '@/hooks/use-month-shift-stats';
+import { useMonthlySummary } from '@/hooks/use-monthly-summary';
 import { formatKronor } from '@/lib/money';
 import { MONTHLY_HOUR_TARGET } from '@/lib/shift-stats';
 
 export default function DashboardPage() {
   const { user, userName, shifts, stats, isLoading, error } = useMonthShiftStats();
+  const { summary, isLoading: summaryLoading, error: summaryError } = useMonthlySummary();
 
-  if (isLoading) {
+  if (isLoading || summaryLoading) {
     return (
       <AppShell>
         <p className="text-sm text-muted-foreground">Laddar dashboard…</p>
@@ -43,8 +45,9 @@ export default function DashboardPage() {
   }
 
   const displayName = user.firstName;
-  const goalOre = user.monthlySalaryGoal;
+  const goalOre = summary?.goalOre ?? user.monthlySalaryGoal;
   const hoursProgress = Math.min(100, Math.round((stats.hours / MONTHLY_HOUR_TARGET) * 100));
+  const goalProgress = summary?.goalProgressPercent ?? 0;
 
   const recentShifts = [...shifts]
     .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
@@ -69,6 +72,16 @@ export default function DashboardPage() {
             </Link>
           </Button>
         </div>
+
+        {summaryError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {summaryError}{' '}
+            <Link href="/summary" className="underline underline-offset-4">
+              Öppna sammanfattning
+            </Link>
+          </p>
+        ) : null}
+
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
@@ -97,13 +110,13 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Beräknad lön (brutto)</p>
                   <p className="text-2xl font-semibold tabular-nums">
-                    {formatKronor(stats.totalGrossOre)}
+                    {summary ? formatKronor(summary.grossOre) : '—'}
                   </p>
                 </div>
                 <Button asChild variant="outline">
-                  <Link href="/shifts">
+                  <Link href="/summary">
                     <Clock className="size-4" />
-                    Visa alla pass
+                    Visa sammanfattning
                   </Link>
                 </Button>
               </div>
@@ -111,17 +124,16 @@ export default function DashboardPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Lönemål</CardTitle>
+              <CardTitle>Lönemål (netto)</CardTitle>
               <CardDescription>
                 {goalOre ? formatKronor(goalOre) : 'Inget mål satt ännu'}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-3 pb-6">
-              <CircularProgress value={stats.goalProgress} label="av mål" />
-              <p className="text-sm text-muted-foreground">
-                {stats.shiftCount === 0
-                  ? 'Progress syns när du loggat skift.'
-                  : `${stats.shiftCount} pass · ${stats.hours.toFixed(1)} h`}
+              <CircularProgress value={goalProgress} label="av mål" />
+              <p className="text-sm text-muted-foreground">Beräknad lön (netto)</p>
+              <p className="text-2xl font-semibold tabular-nums">
+                {summary ? formatKronor(summary.netOre) : '—'}
               </p>
             </CardContent>
           </Card>
