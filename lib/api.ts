@@ -5,6 +5,7 @@ import type {
   CreateJobProfileBody,
   CreateShiftBody,
   LoginBody,
+  MonthlySummary,
   PublicUser,
   PublicJobProfile,
   PublicShift,
@@ -172,4 +173,28 @@ export async function deleteShift(id: string): Promise<void> {
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte ta bort passet');
   }
+}
+
+export async function getMonthlySummary(params: {
+  from: string;
+  to: string;
+  jobProfileId?: string;
+}): Promise<MonthlySummary> {
+  const search = new URLSearchParams();
+  search.set('from', params.from);
+  search.set('to', params.to);
+  if (params.jobProfileId) search.set('jobProfileId', params.jobProfileId);
+
+  const response = await fetch(`${API_URL}/summaries/monthly?${search}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<MonthlySummary> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta månadssammanfattning');
+  }
+
+  return json.data;
 }

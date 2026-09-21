@@ -49,6 +49,30 @@ export interface CreateShiftBody {
   notes?: string;
 }
 
+export interface ProfileBreakDown {
+  jobProfileId: string;
+  name: string;
+  taxRate: number;
+  shiftCount: number;
+  workedMinutes: number;
+  breakMinutes: number;
+  grossOre: number;
+  netOre: number;
+}
+
+export interface MonthlySummary {
+  from: string;
+  to: string;
+  shiftCount: number;
+  workedMinutes: number;
+  breakMinutes: number;
+  grossOre: number;
+  netOre: number;
+  goalOre: number | null;
+  goalProgressPercent: number;
+  byJobProfile: ProfileBreakDown[];
+}
+
 export interface AuthSuccessData {
   token: string;
   user: PublicUser;
