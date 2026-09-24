@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import StateCard from '@/components/state-card';
 import { useMonthlySummary } from '@/hooks/use-monthly-summary';
 import { formatKronor } from '@/lib/money';
 import { MONTHLY_HOUR_TARGET } from '@/lib/shift-stats';
@@ -45,6 +46,14 @@ export default function MonthlySummaryPage() {
   const hoursProgress = Math.min(100, Math.round((hours / MONTHLY_HOUR_TARGET) * 100));
   const goalProgress = summary?.goalProgressPercent ?? 0;
 
+  const stats = [
+    { label: 'Pass', value: summary?.shiftCount ?? 0 },
+    { label: 'Timmar', value: `${hours.toFixed(1)} h`, progress: hoursProgress },
+    { label: 'Brutto', value: formatKronor(summary?.grossOre ?? 0) },
+    { label: 'OB-tillägg', value: formatKronor(summary?.obOre ?? 0) },
+    { label: 'Netto', value: formatKronor(summary?.netOre ?? 0) },
+  ] as const;
+
   return (
     <AppShell userName={userName}>
       <FadeIn className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -62,44 +71,10 @@ export default function MonthlySummaryPage() {
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Pass</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">{summary?.shiftCount ?? 0}</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Timmar</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">{hours.toFixed(1)} h</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary transition-all"
-                  style={{ width: `${hoursProgress}%` }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Brutto</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">
-                {formatKronor(summary?.grossOre ?? 0)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Netto</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">
-                {formatKronor(summary?.netOre ?? 0)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {stats.map((stat) => (
+            <StateCard key={stat.label} {...stat} />
+          ))}
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -116,6 +91,7 @@ export default function MonthlySummaryPage() {
                     <TableHead className="text-right">Pass</TableHead>
                     <TableHead className="text-right">Tid</TableHead>
                     <TableHead className="text-right">Skatt</TableHead>
+                    <TableHead className="text-right">OB</TableHead>
                     <TableHead className="text-right">Brutto</TableHead>
                     <TableHead className="text-right">Netto</TableHead>
                   </TableRow>
@@ -123,7 +99,7 @@ export default function MonthlySummaryPage() {
                 <TableBody>
                   {!summary || summary.byJobProfile.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-10 text-center text-muted">
+                      <TableCell colSpan={7} className="py-10 text-center text-muted">
                         Inga pass denna månad.{' '}
                         <Link href="/shifts/new" className="underline underline-offset-4">
                           Logga ett pass
@@ -139,6 +115,9 @@ export default function MonthlySummaryPage() {
                           {(row.workedMinutes / 60).toFixed(1)} h
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{row.taxRate}%</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatKronor(row.obOre)}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {formatKronor(row.grossOre)}
                         </TableCell>

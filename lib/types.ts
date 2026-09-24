@@ -56,6 +56,8 @@ export interface ProfileBreakDown {
   shiftCount: number;
   workedMinutes: number;
   breakMinutes: number;
+  baseOre: number;
+  obOre: number;
   grossOre: number;
   netOre: number;
 }
@@ -66,6 +68,8 @@ export interface MonthlySummary {
   shiftCount: number;
   workedMinutes: number;
   breakMinutes: number;
+  baseOre: number;
+  obOre: number;
   grossOre: number;
   netOre: number;
   goalOre: number | null;
