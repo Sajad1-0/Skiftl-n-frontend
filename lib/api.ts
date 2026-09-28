@@ -9,6 +9,7 @@ import type {
   PublicUser,
   PublicJobProfile,
   PublicShift,
+  PublicAgreement,
   RegisterBody,
 } from './types';
 import { getToken } from './auth-storage';
@@ -194,6 +195,21 @@ export async function getMonthlySummary(params: {
 
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte hämta månadssammanfattning');
+  }
+
+  return json.data;
+}
+
+export async function listCollectiveAgreements(): Promise<PublicAgreement[]> {
+  const response = await fetch(`${API_URL}/collective-agreements`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicAgreement[]> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta kollektivavtal');
   }
 
   return json.data;
