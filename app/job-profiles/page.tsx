@@ -17,9 +17,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { deleteJobProfile, listJobProfiles } from '@/lib/api';
+import { deleteJobProfile, listJobProfiles, listCollectiveAgreements } from '@/lib/api';
 import { formatKronor } from '@/lib/money';
-import type { PublicJobProfile } from '@/lib/types';
+import type { PublicAgreement, PublicJobProfile } from '@/lib/types';
 
 export default function JobProfilesPage() {
   const { user, userName, isLoading: authLoading, error: authError } = useAuthUser();
@@ -27,17 +27,18 @@ export default function JobProfilesPage() {
   const [error, setError] = useState<string | null>(null);
   const [profilesLoading, setProfilesLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [agreements, setAgreements] = useState<PublicAgreement[]>([]);
 
   useEffect(() => {
     if (!user) return;
 
     let cancelled = false;
 
-    async function loadProfiles() {
+    async function load() {
       try {
-        const data = await listJobProfiles();
+        const profileData = await listJobProfiles();
         if (!cancelled) {
-          setProfiles(data);
+          setProfiles(profileData);
           setError(null);
         }
       } catch (loadError) {
@@ -47,13 +48,23 @@ export default function JobProfilesPage() {
       } finally {
         if (!cancelled) setProfilesLoading(false);
       }
+
+      try {
+        const agreementData = await listCollectiveAgreements();
+        if (!cancelled) setAgreements(agreementData);
+      } catch {
+        if (!cancelled) setAgreements([]);
+      }
     }
 
-    void loadProfiles();
+    void load();
     return () => {
       cancelled = true;
     };
   }, [user]);
+
+  const agreementName = (id: string | null) =>
+    id ? (agreements.find((a) => a.id === id)?.name ?? 'Okänt avtal') : '—';
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -118,13 +129,14 @@ export default function JobProfilesPage() {
                     <TableHead>Timlön</TableHead>
                     <TableHead>Skatt</TableHead>
                     <TableHead>Arbetsgivare</TableHead>
+                    <TableHead>Avtal</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {profiles.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                         Ingen jobbprofil ännu.{' '}
                         <Link
                           href="/job-profiles/new"
@@ -149,6 +161,9 @@ export default function JobProfilesPage() {
                         <TableCell className="tabular-nums">{profile.taxRate}%</TableCell>
                         <TableCell className="text-muted-foreground">
                           {profile.employerName ?? '—'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {agreementName(profile.collectiveAgreementId)}
                         </TableCell>
                         <TableCell>
                           <Button

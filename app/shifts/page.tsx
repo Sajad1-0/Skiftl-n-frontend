@@ -76,6 +76,7 @@ export default function ShiftPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               {stats.shiftCount} pass · {stats.hours.toFixed(1)} h ·{' '}
               {formatKronor(stats.totalGrossOre)} brutto
+              {stats.totalObOre > 0 ? ` · ${formatKronor(stats.totalObOre)} OB` : ''}
             </p>
           </div>
           <Button asChild className="gap-1.5 self-start">
@@ -89,9 +90,7 @@ export default function ShiftPage() {
         <Card>
           <CardHeader>
             <CardTitle>Denna månad</CardTitle>
-            <CardDescription>
-              Brutto räknas från jobbprofilens timlön (öre → kronor i UI)
-            </CardDescription>
+            <CardDescription>Brutto = bas + OB från sparad snapshot (öre → kronor i UI)</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -101,6 +100,7 @@ export default function ShiftPage() {
                   <TableHead>Slut</TableHead>
                   <TableHead>Profil</TableHead>
                   <TableHead className="text-right">Tid</TableHead>
+                  <TableHead className="text-right">OB</TableHead>
                   <TableHead className="text-right">Brutto</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
@@ -108,7 +108,7 @@ export default function ShiftPage() {
               <TableBody>
                 {shifts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                       Inga pass ännu.{' '}
                       <Link href="/shifts/new" className="underline underline-offset-4">
                         Logga ditt första
@@ -123,6 +123,9 @@ export default function ShiftPage() {
                       <TableCell>{profileName(shift.jobProfileId)}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {(shift.workedMinutes / 60).toFixed(1)} h
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatKronor(shift.obOre ?? 0)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatKronor(shift.grossOre)}

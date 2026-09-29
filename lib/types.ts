@@ -9,6 +9,12 @@ export interface PublicUser {
   updatedAt: string;
 }
 
+export interface PublicAgreement {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+}
 export interface PublicJobProfile {
   id: string;
   userId: string;
@@ -17,6 +23,7 @@ export interface PublicJobProfile {
   taxRate: number;
   employerName: string | null;
   isPrimary: boolean;
+  collectiveAgreementId: string | null;
   createdAt: string;
 }
 
@@ -26,6 +33,7 @@ export interface CreateJobProfileBody {
   taxRate: number;
   employerName?: string;
   isPrimary?: boolean;
+  collectiveAgreementId?: string | null;
 }
 
 export interface PublicShift {
@@ -38,7 +46,10 @@ export interface PublicShift {
   notes: string | null;
   createdAt: string;
   workedMinutes: number;
+  baseOre: number;
+  obOre: number;
   grossOre: number;
+  agreementVersionId: string | null;
 }
 
 export interface CreateShiftBody {
