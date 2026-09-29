@@ -53,7 +53,6 @@ export default function JobProfilesPage() {
         const agreementData = await listCollectiveAgreements();
         if (!cancelled) setAgreements(agreementData);
       } catch {
-        // Avtal saknas → visa "—" / "Okänt avtal"; profilerna ska fortfarande synas
         if (!cancelled) setAgreements([]);
       }
     }
