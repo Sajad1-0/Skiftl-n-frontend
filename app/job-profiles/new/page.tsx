@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useActionState } from 'react';
+import { useActionState, useState, useEffect } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { createJobProfile } from '@/lib/api';
+import { createJobProfile, listCollectiveAgreements } from '@/lib/api';
 import { kronorToOre } from '@/lib/money';
+import type { PublicAgreement } from '@/lib/types';
 
 interface FormState {
   error: string | null;
@@ -21,7 +22,26 @@ const initialState: FormState = { error: null };
 
 export default function NewJobProfilePage() {
   const router = useRouter();
-  const { userName, isLoading: authLoading } = useAuthUser();
+  const { user, userName, isLoading: authLoading } = useAuthUser();
+  const [agreements, setAgreements] = useState<PublicAgreement[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+
+    void listCollectiveAgreements()
+      .then((data) => {
+        if (!cancelled) setAgreements(data);
+      })
+      .catch(() => {
+        if (!cancelled) setAgreements([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const [state, formAction, isPending] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
@@ -30,6 +50,7 @@ export default function NewJobProfilePage() {
       const hourlyWageKronor = Number(formData.get('hourlyWageKronor'));
       const taxRate = Number(formData.get('taxRate'));
       const isPrimary = formData.get('isPrimary') === 'on';
+      const agreementRaw = String(formData.get('collectiveAgreementId') ?? '').trim();
 
       if (!Number.isFinite(hourlyWageKronor) || hourlyWageKronor <= 0) {
         return { error: 'Ange en giltig timlön i kronor' };
@@ -46,6 +67,7 @@ export default function NewJobProfilePage() {
           taxRate,
           employerName: employerName.length >= 2 ? employerName : undefined,
           isPrimary,
+          collectiveAgreementId: agreementRaw.length > 0 ? agreementRaw : null,
         });
         router.push('/job-profiles');
         return { error: null };
@@ -133,6 +155,26 @@ export default function NewJobProfilePage() {
                   placeholder="MaxiMarket"
                   className="h-11"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="collectiveAgreementId">Kollektivavtal (valfritt)</Label>
+                <select
+                  name="collectiveAgreementId"
+                  id="collectiveAgreementId"
+                  className="flex h-11 w-full rounded-md border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  defaultValue=""
+                >
+                  <option value="">Ingen OB</option>
+                  {agreements.map((agreement) => (
+                    <option key={agreement.id} value={agreement.id}>
+                      {agreement.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Utan avtal räknas bara grundlön. Med avtal beräknas OB när du loggar pass.
+                </p>
               </div>
 
               <label className="flex items-center gap-2 text-sm font-medium">

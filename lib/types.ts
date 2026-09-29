@@ -46,6 +46,8 @@ export interface PublicShift {
   notes: string | null;
   createdAt: string;
   workedMinutes: number;
+  baseOre: number;
+  obOre: number;
   grossOre: number;
   agreementVersionId: string | null;
 }
