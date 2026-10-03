@@ -35,6 +35,14 @@ export interface CreateJobProfileBody {
   isPrimary?: boolean;
   collectiveAgreementId?: string | null;
 }
+export interface UpdateJobProfileBody {
+  name?: string;
+  hourlyWage?: number;
+  taxRate?: number;
+  employerName?: string | null;
+  isPrimary?: boolean;
+  collectiveAgreementId?: string | null;
+}
 
 export interface PublicShift {
   id: string;

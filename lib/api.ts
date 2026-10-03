@@ -11,6 +11,7 @@ import type {
   PublicShift,
   PublicAgreement,
   RegisterBody,
+  UpdateJobProfileBody,
 } from './types';
 import { getToken } from './auth-storage';
 
@@ -109,6 +110,40 @@ export async function createJobProfile(body: CreateJobProfileBody): Promise<Publ
 
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte skapa jobbprofil');
+  }
+
+  return json.data;
+}
+
+export async function getJobProfile(id: string): Promise<PublicJobProfile> {
+  const response = await fetch(`${API_URL}/job-profiles/${id}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicJobProfile> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta jobbprofil');
+  }
+
+  return json.data;
+}
+
+export async function updateJobProfile(
+  id: string,
+  body: UpdateJobProfileBody,
+): Promise<PublicJobProfile> {
+  const response = await fetch(`${API_URL}/job-profiles/${id}`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicJobProfile> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte uppdatera jobbprofil');
   }
 
   return json.data;
