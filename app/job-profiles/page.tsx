@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Badge } from '@/components/ui/badge';
@@ -130,7 +130,7 @@ export default function JobProfilesPage() {
                     <TableHead>Skatt</TableHead>
                     <TableHead>Arbetsgivare</TableHead>
                     <TableHead>Avtal</TableHead>
-                    <TableHead className="w-12" />
+                    <TableHead className="w-20" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -166,6 +166,16 @@ export default function JobProfilesPage() {
                           {agreementName(profile.collectiveAgreementId)}
                         </TableCell>
                         <TableCell>
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={`Redigera ${profile.name}`}
+                          >
+                            <Link href={`/job-profiles/${profile.id}/edit`}>
+                              <Pencil className="size-4" />
+                            </Link>
+                          </Button>
                           <Button
                             type="button"
                             variant="ghost"
