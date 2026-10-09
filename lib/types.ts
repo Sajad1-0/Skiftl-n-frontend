@@ -90,7 +90,9 @@ export interface MonthlySummary {
   baseOre: number;
   obOre: number;
   grossOre: number;
+  taxOre: number;
   netOre: number;
+  taxMode: TaxMode;
   goalOre: number | null;
   goalProgressPercent: number;
   byJobProfile: ProfileBreakDown[];
@@ -122,4 +124,21 @@ export interface RegisterBody {
 export interface LoginBody {
   email: string;
   password: string;
+}
+
+export type TaxMode = 'table' | 'flat';
+
+export interface PublicTaxSettings {
+  taxYear: number;
+  tableNumber: number;
+  columnNumber: number;
+  dayType: string;
+  updatedAt: string;
+}
+
+export interface UpsertTaxSettingsBody {
+  taxYear: number;
+  tableNumber: number;
+  columnNumber?: number;
+  dayType?: '30B' | '30%';
 }

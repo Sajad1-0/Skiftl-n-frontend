@@ -45,33 +45,40 @@ export default function MonthlySummaryPage() {
   const hours = summary ? summary.workedMinutes / 60 : 0;
   const hoursProgress = Math.min(100, Math.round((hours / MONTHLY_HOUR_TARGET) * 100));
   const goalProgress = summary?.goalProgressPercent ?? 0;
+  const taxModeLabel = summary?.taxMode === 'table' ? 'Skattetabell' : 'Schablon (profil)';
 
   const stats = [
     { label: 'Pass', value: summary?.shiftCount ?? 0 },
     { label: 'Timmar', value: `${hours.toFixed(1)} h`, progress: hoursProgress },
     { label: 'Brutto', value: formatKronor(summary?.grossOre ?? 0) },
     { label: 'OB-tillägg', value: formatKronor(summary?.obOre ?? 0) },
+    { label: 'Skatt', value: formatKronor(summary?.taxOre ?? 0) },
     { label: 'Netto', value: formatKronor(summary?.netOre ?? 0) },
   ] as const;
 
   return (
     <AppShell userName={userName}>
       <FadeIn className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Månadssammanfattning</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Brutto, netto och fördelning per jobbprofil denna månad
+              Brutto, skatt ({taxModeLabel}) och netto denna månad
             </p>
           </div>
-          <Button asChild variant="outline" className="self-start">
-            <Link href="/shifts">Visa pass</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2 self-start">
+            <Button asChild variant="outline">
+              <Link href="/tax-settings">Skatteinställningar</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/shifts">Visa pass</Link>
+            </Button>
+          </div>
         </div>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
           {stats.map((stat) => (
             <StateCard key={stat.label} {...stat} />
           ))}
@@ -81,7 +88,11 @@ export default function MonthlySummaryPage() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Per jobbprofil</CardTitle>
-              <CardDescription>Skatt och netto beräknas per profil</CardDescription>
+              <CardDescription>
+                {summary?.taxMode === 'table'
+                  ? 'Netto per profil är fördelat proportionellt från månadsskatt (tabell).'
+                  : 'Netto beräknas med jobbprofilens schablonskatt (%).'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -114,7 +125,9 @@ export default function MonthlySummaryPage() {
                         <TableCell className="text-right tabular-nums">
                           {(row.workedMinutes / 60).toFixed(1)} h
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{row.taxRate}%</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {summary?.taxMode === 'table' ? '—' : `${row.taxRate}%`}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {formatKronor(row.obOre)}
                         </TableCell>

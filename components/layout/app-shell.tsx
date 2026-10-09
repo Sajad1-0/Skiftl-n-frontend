@@ -2,7 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Briefcase, LayoutDashboard, LogOut, Clock, Menu, Search, X, PieChart } from 'lucide-react';
+import {
+  Briefcase,
+  LayoutDashboard,
+  LogOut,
+  Clock,
+  Menu,
+  Search,
+  X,
+  PieChart,
+  Percent,
+} from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
@@ -15,6 +25,7 @@ const navItems = [
   { href: '/job-profiles', label: 'Jobbprofiler', icon: Briefcase },
   { href: '/shifts', label: 'Pass', icon: Clock },
   { href: '/summary', label: 'Sammanfattning', icon: PieChart },
+  { href: '/tax-settings', label: 'Skatt', icon: Percent },
 ] as const;
 
 interface AppShellProps {
