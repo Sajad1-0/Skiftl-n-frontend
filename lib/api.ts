@@ -12,6 +12,8 @@ import type {
   PublicAgreement,
   RegisterBody,
   UpdateJobProfileBody,
+  PublicTaxSettings,
+  UpsertTaxSettingsBody,
 } from './types';
 import { getToken } from './auth-storage';
 
@@ -230,6 +232,37 @@ export async function getMonthlySummary(params: {
 
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte hämta månadssammanfattning');
+  }
+
+  return json.data;
+}
+
+export async function getTaxSettings(): Promise<PublicTaxSettings | null> {
+  const response = await fetch(`${API_URL}/tax-settings`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicTaxSettings | null> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta skatteinställningar');
+  }
+
+  return json.data;
+}
+
+export async function upsertTaxSettings(body: UpsertTaxSettingsBody): Promise<PublicTaxSettings> {
+  const response = await fetch(`${API_URL}/tax-settings`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicTaxSettings> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte spara skatteinställningar');
   }
 
   return json.data;
