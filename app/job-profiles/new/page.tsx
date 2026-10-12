@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState, useState, useEffect } from 'react';
+import { PageError } from '@/components/feedback/page-error';
+import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
@@ -81,11 +83,7 @@ export default function NewJobProfilePage() {
   );
 
   if (authLoading) {
-    return (
-      <AppShell>
-        <p className="text-sm text-muted-foreground">Laddar…</p>
-      </AppShell>
-    );
+    return <PageLoading label="Laddar…" userName={userName} />;
   }
 
   return (
@@ -182,14 +180,7 @@ export default function NewJobProfilePage() {
                 Sätt som primär profil
               </label>
 
-              {state.error ? (
-                <p
-                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  role="alert"
-                >
-                  {state.error}
-                </p>
-              ) : null}
+              {state.error ? <PageError message={state.error} /> : null}
 
               <Button type="submit" disabled={isPending} size="lg" className="h-11 w-full">
                 {isPending ? 'Sparar…' : 'Skapa profil'}

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useTransition, useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { PageError } from '@/components/feedback/page-error';
+import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
@@ -60,11 +62,7 @@ export default function ShiftPage() {
   const profileName = (id: string) => profiles.find((p) => p.id === id)?.name ?? 'Okänd profil';
 
   if (isLoading) {
-    return (
-      <AppShell>
-        <p className="text-sm text-muted-foreground">Laddar pass…</p>
-      </AppShell>
-    );
+    return <PageLoading label="Laddar pass…" userName={userName} />;
   }
 
   return (
@@ -86,7 +84,7 @@ export default function ShiftPage() {
             </Link>
           </Button>
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <PageError message={error} variant="inline" /> : null}
         <Card>
           <CardHeader>
             <CardTitle>Denna månad</CardTitle>

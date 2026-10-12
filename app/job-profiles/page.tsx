@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
 import { Plus, Trash2, Pencil } from 'lucide-react';
+import { PageError } from '@/components/feedback/page-error';
+import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Badge } from '@/components/ui/badge';
@@ -81,11 +83,7 @@ export default function JobProfilesPage() {
   const displayError = error ?? authError;
 
   if (isLoading) {
-    return (
-      <AppShell userName={userName}>
-        <p className="text-sm text-muted-foreground">Laddar jobbprofiler…</p>
-      </AppShell>
-    );
+    return <PageLoading label="Laddar jobbprofiler…" userName={userName} />;
   }
 
   return (
@@ -106,14 +104,7 @@ export default function JobProfilesPage() {
           </Button>
         </div>
 
-        {displayError ? (
-          <p
-            className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            role="alert"
-          >
-            {displayError}
-          </p>
-        ) : null}
+        {displayError ? <PageError message={displayError} /> : null}
 
         <div className="grid gap-4 lg:grid-cols-5">
           <Card className="lg:col-span-3">

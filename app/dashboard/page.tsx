@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { Clock, Plus } from 'lucide-react';
+import { AuthRequired, PageError } from '@/components/feedback/page-error';
+import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Badge } from '@/components/ui/badge';
@@ -26,22 +28,11 @@ export default function DashboardPage() {
   const { summary, isLoading: summaryLoading, error: summaryError } = useMonthlySummary();
 
   if (isLoading || summaryLoading) {
-    return (
-      <AppShell>
-        <p className="text-sm text-muted-foreground">Laddar dashboard…</p>
-      </AppShell>
-    );
+    return <PageLoading label="Laddar dashboard…" />;
   }
 
   if (!user) {
-    return (
-      <main className="mx-auto flex min-h-full w-full max-w-lg flex-1 flex-col justify-center gap-4 px-4 py-12">
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Link href="/login" className="text-sm font-medium underline-offset-4 hover:underline">
-          Logga in
-        </Link>
-      </main>
-    );
+    return <AuthRequired error={error} />;
   }
 
   const displayName = user.firstName;
@@ -74,12 +65,17 @@ export default function DashboardPage() {
         </div>
 
         {summaryError ? (
-          <p className="text-sm text-destructive" role="alert">
-            {summaryError}{' '}
-            <Link href="/summary" className="underline underline-offset-4">
-              Öppna sammanfattning
-            </Link>
-          </p>
+          <PageError
+            variant="inline"
+            message={
+              <>
+                {summaryError}{' '}
+                <Link href="/summary" className="underline underline-offset-4">
+                  Öppna sammanfattning
+                </Link>
+              </>
+            }
+          />
         ) : null}
 
         <div className="grid gap-4 lg:grid-cols-3">

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useActionState, useEffect, useState } from 'react';
+import { PageError } from '@/components/feedback/page-error';
+import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
@@ -96,11 +98,7 @@ export default function TaxSettingsPage() {
   );
 
   if (authLoading || (user && loading)) {
-    return (
-      <AppShell userName={userName}>
-        <p className="text-sm text-muted-foreground">Laddar…</p>
-      </AppShell>
-    );
+    return <PageLoading label="Laddar…" userName={userName} />;
   }
 
   const defaultYear = settings?.taxYear ?? new Date().getFullYear();
@@ -120,11 +118,7 @@ export default function TaxSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loadError ? (
-              <p className="mb-4 text-sm text-destructive" role="alert">
-                {loadError}
-              </p>
-            ) : null}
+            {loadError ? <PageError message={loadError} variant="inline" className="mb-4" /> : null}
 
             <form action={formAction}>
               <div className="space-y-2">
@@ -190,14 +184,7 @@ export default function TaxSettingsPage() {
                 </select>
               </div>
 
-              {state.error ? (
-                <p
-                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  role="alert"
-                >
-                  {state.error}
-                </p>
-              ) : null}
+              {state.error ? <PageError message={state.error} /> : null}
 
               {state.success ? (
                 <p

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useActionState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Logo } from '@/components/brand/logo';
+import { PageError } from '@/components/feedback/page-error';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -121,14 +122,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            {state.error ? (
-              <p
-                className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                role="alert"
-              >
-                {state.error}
-              </p>
-            ) : null}
+            {state.error ? <PageError message={state.error} /> : null}
 
             <Button type="submit" disabled={isPending} size="lg" className="mt-1 h-11 w-full gap-2">
               {isPending ? 'Skapar konto…' : 'Registrera'}

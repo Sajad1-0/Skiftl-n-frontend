@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
+import { PageError } from '@/components/feedback/page-error';
+import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
@@ -101,11 +103,7 @@ export default function NewShiftPage() {
   const isLoading = authLoading || (!!user && profilesLoading);
 
   if (isLoading) {
-    return (
-      <AppShell userName={userName}>
-        <p className="text-sm text-muted-foreground">Laddar…</p>
-      </AppShell>
-    );
+    return <PageLoading label="Laddar…" userName={userName} />;
   }
 
   return (
@@ -120,7 +118,7 @@ export default function NewShiftPage() {
           </CardHeader>
           <CardContent>
             {profilesError ? (
-              <p className="text-sm text-destructive">{profilesError}</p>
+              <PageError message={profilesError} variant="inline" />
             ) : profiles.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Du behöver en jobbprofil först.{' '}
@@ -182,7 +180,7 @@ export default function NewShiftPage() {
                   <Input id="notes" name="notes" type="text" maxLength={2000} className="h-11" />
                 </div>
 
-                {state.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
+                {state.error ? <PageError message={state.error} variant="inline" /> : null}
 
                 <div className="flex gap-2 pt-2">
                   <Button type="submit" disabled={isPending} className="flex-1">

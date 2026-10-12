@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
+import { PageError } from '@/components/feedback/page-error';
+import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
@@ -107,26 +109,21 @@ export default function EditJobProfilePage() {
   );
 
   if (authLoading || (user && loading)) {
-    return (
-      <AppShell userName={userName}>
-        <p className="text-sm text-muted-foreground">Laddar…</p>
-      </AppShell>
-    );
+    return <PageLoading label="Laddar…" userName={userName} />;
   }
 
   if (loadError || !profile) {
     return (
-      <AppShell userName={userName}>
-        <p className="text-sm text-destructive" role="alert">
-          {loadError ?? 'Profilen hittades inte'}
-        </p>
-        <Link
-          href="/job-profiles"
-          className="mt-4 inline-block text-sm underline-offset-4 hover:underline"
-        >
-          Tillbaka till listan
-        </Link>
-      </AppShell>
+      <PageError
+        variant="page"
+        userName={userName}
+        message={loadError ?? 'Profilen hittades inte'}
+        action={
+          <Link href="/job-profiles" className="text-sm underline-offset-4 hover:underline">
+            Tillbaka till listan
+          </Link>
+        }
+      />
     );
   }
 
@@ -236,14 +233,7 @@ export default function EditJobProfilePage() {
                 Sätt som primär profil
               </label>
 
-              {state.error ? (
-                <p
-                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  role="alert"
-                >
-                  {state.error}
-                </p>
-              ) : null}
+              {state.error ? <PageError message={state.error} /> : null}
               <Button type="submit" disabled={isPending} size="lg" className="h-11 w-full">
                 {isPending ? 'Sparar…' : 'Spara ändringar'}
               </Button>

@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { AuthRequired, PageError } from '@/components/feedback/page-error';
+import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Badge } from '@/components/ui/badge';
@@ -24,22 +26,11 @@ export default function MonthlySummaryPage() {
   const { user, userName, summary, isLoading, error } = useMonthlySummary();
 
   if (isLoading) {
-    return (
-      <AppShell>
-        <p className="text-sm text-muted-foreground">Laddar Sammanfattning</p>
-      </AppShell>
-    );
+    return <PageLoading label="Laddar sammanfattning…" />;
   }
 
   if (!user) {
-    return (
-      <main className="mx-auto flex min-h-full w-full max-w-lg flex-1 flex-col justify-center gap-4 px-4 py-12">
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Link href="/login" className="text-sm font-medium underline-offset-4 hover:underline">
-          Logga in
-        </Link>
-      </main>
-    );
+    return <AuthRequired error={error} />;
   }
 
   const hours = summary ? summary.workedMinutes / 60 : 0;
@@ -76,7 +67,7 @@ export default function MonthlySummaryPage() {
           </div>
         </div>
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <PageError message={error} variant="inline" /> : null}
 
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
           {stats.map((stat) => (
