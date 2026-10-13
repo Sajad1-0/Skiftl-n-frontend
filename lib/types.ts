@@ -58,6 +58,7 @@ export interface PublicShift {
   obOre: number;
   grossOre: number;
   agreementVersionId: string | null;
+  estimatedNetOre: number | null;
 }
 
 export interface CreateShiftBody {
