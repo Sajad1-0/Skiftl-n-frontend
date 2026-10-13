@@ -18,6 +18,8 @@ export interface UseMonthShiftStatsResult {
   error: string | null;
   setShifts: Dispatch<SetStateAction<PublicShift[]>>;
   setError: Dispatch<SetStateAction<string | null>>;
+  /** Ladda om månadens pass (t.ex. efter delete så est. netto uppdateras). */
+  reloadShifts: () => Promise<void>;
 }
 
 export function useMonthShiftStats(): UseMonthShiftStatsResult {
@@ -26,6 +28,12 @@ export function useMonthShiftStats(): UseMonthShiftStatsResult {
   const [shifts, setShifts] = useState<PublicShift[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  async function reloadShifts(): Promise<void> {
+    const monthShifts = await listShifts(monthBounds());
+    setShifts(monthShifts);
+    setError(null);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -85,5 +93,6 @@ export function useMonthShiftStats(): UseMonthShiftStatsResult {
     error,
     setShifts,
     setError,
+    reloadShifts,
   };
 }

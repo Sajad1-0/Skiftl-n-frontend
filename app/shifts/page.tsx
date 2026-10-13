@@ -30,7 +30,8 @@ function formatWhen(iso: string): string {
 }
 
 export default function ShiftPage() {
-  const { userName, shifts, stats, isLoading, error, setShifts, setError } = useMonthShiftStats();
+  const { userName, shifts, stats, isLoading, error, setShifts, setError, reloadShifts } =
+    useMonthShiftStats();
   const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
   const [isPending, startTransition] = useTransition();
 
@@ -52,7 +53,17 @@ export default function ShiftPage() {
     startTransition(async () => {
       try {
         await deleteShift(id);
+        // Optimistiskt bort — sedan reload för uppdaterad est. netto
         setShifts((current) => current.filter((shift) => shift.id !== id));
+        try {
+          await reloadShifts();
+        } catch (reloadErr) {
+          setError(
+            reloadErr instanceof Error
+              ? reloadErr.message
+              : 'Passet togs bort men listan kunde inte uppdateras',
+          );
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Kunde inte ta bort pass');
       }
@@ -88,7 +99,10 @@ export default function ShiftPage() {
         <Card>
           <CardHeader>
             <CardTitle>Denna månad</CardTitle>
-            <CardDescription>Brutto = bas + OB från sparad snapshot (öre → kronor i UI)</CardDescription>
+            <CardDescription>
+              Est. netto = ungefärligt efter skatt (tabellmarginal eller schablon). Ändras om du
+              lägger till/tar bort tidigare pass samma månad. Brutto är snapshot.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -100,13 +114,14 @@ export default function ShiftPage() {
                   <TableHead className="text-right">Tid</TableHead>
                   <TableHead className="text-right">OB</TableHead>
                   <TableHead className="text-right">Brutto</TableHead>
+                  <TableHead className="text-right">Est. netto</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {shifts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                       Inga pass ännu.{' '}
                       <Link href="/shifts/new" className="underline underline-offset-4">
                         Logga ditt första
@@ -127,6 +142,9 @@ export default function ShiftPage() {
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatKronor(shift.grossOre)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                        {shift.estimatedNetOre != null ? formatKronor(shift.estimatedNetOre) : '—'}
                       </TableCell>
                       <TableCell>
                         <Button
