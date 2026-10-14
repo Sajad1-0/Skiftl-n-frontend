@@ -18,6 +18,7 @@ import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { clearToken } from '@/lib/auth-storage';
+import { BRAND_DOMAIN, BRAND_NAME } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -80,7 +81,7 @@ export function AppShell({ children, userName }: AppShellProps) {
               {(userName ?? 'S').slice(0, 1).toUpperCase()}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{userName ?? 'SkiftLön'}</p>
+              <p className="truncate text-sm font-medium">{userName ?? BRAND_NAME}</p>
             </div>
             <Button
               type="button"
@@ -114,7 +115,7 @@ export function AppShell({ children, userName }: AppShellProps) {
               <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 readOnly
-                placeholder="skiftlon.app"
+                placeholder={BRAND_DOMAIN}
                 className="h-9 bg-muted/50 pl-9"
                 aria-label="Sök"
               />

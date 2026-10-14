@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Logo } from '@/components/brand/logo';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
+import { BRAND_NAME } from '@/lib/brand';
 
 export default function HomePage() {
   return (
@@ -22,8 +23,10 @@ export default function HomePage() {
         </div>
       </header>
       <FadeIn className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 pb-20">
-        <h1 className="text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-          SkiftLön
+        <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+          <span className="text-foreground">Shift</span>
+          <span className="text-primary">kit</span>
+          <span className="sr-only">{BRAND_NAME}</span>
         </h1>
         <p className="mt-4 max-w-lg text-base text-muted-foreground md:text-lg">
           Logga arbetstid och se din lön före och efter skatt — lugnt, tydligt och byggt för

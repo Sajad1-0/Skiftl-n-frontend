@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'skiftlon_token';
+const TOKEN_KEY = 'shiftkit_token';
 
 export function saveToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);

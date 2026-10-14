@@ -8,7 +8,7 @@ interface LogoProps {
   href?: string | null;
   size?: 'sm' | 'md' | 'lg';
   /**
-   * Visa “SkiftLön” bredvid ikonen.
+   * Visa “Shiftkit” bredvid ikonen.
    * `responsive` = text synlig från md och upp (desktop), dold på mobil.
    */
   showWordmark?: boolean | 'responsive';
@@ -47,8 +47,8 @@ export function Logo({
         aria-hidden
       />
       <span className={cn('font-semibold tracking-tight', dims.text, wordmarkClass)}>
-        <span className="text-foreground">Skift</span>
-        <span className="text-primary">Lön</span>
+        <span className="text-foreground">Shift</span>
+        <span className="text-primary">kit</span>
       </span>
       <span className="sr-only">{BRAND_NAME}</span>
     </span>

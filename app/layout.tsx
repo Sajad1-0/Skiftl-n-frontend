@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
       { url: '/icon.png', type: 'image/png', sizes: '512x512' },
-      { url: BRAND_FAVICON_PATH, type: 'image/png', sizes: '948x948' },
+      { url: BRAND_FAVICON_PATH, type: 'image/png', sizes: '512x512' },
     ],
     apple: [{ url: '/apple-icon.png', type: 'image/png', sizes: '512x512' }],
     shortcut: '/favicon.ico',
@@ -34,13 +34,13 @@ export const metadata: Metadata = {
     title: BRAND_NAME,
     description: 'Logga arbetstid och beräkna lön före och efter skatt',
     siteName: BRAND_NAME,
-    images: [{ url: BRAND_LOGO_PATH, width: 792, height: 918, alt: BRAND_NAME }],
+    images: [{ url: BRAND_LOGO_PATH, width: 1024, height: 1024, alt: BRAND_NAME }],
   },
   twitter: {
     card: 'summary',
     title: BRAND_NAME,
     description: 'Logga arbetstid och beräkna lön före och efter skatt',
-    images: [BRAND_MARK_PATH],
+    images: [BRAND_LOGO_PATH],
   },
 };
 
