@@ -12,6 +12,7 @@ import {
   X,
   PieChart,
   Percent,
+  Crown,
 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { Logo } from '@/components/brand/logo';
@@ -27,6 +28,7 @@ const navItems = [
   { href: '/shifts', label: 'Pass', icon: Clock },
   { href: '/summary', label: 'Sammanfattning', icon: PieChart },
   { href: '/tax-settings', label: 'Skatt', icon: Percent },
+  { href: '/premium', label: 'Premium', icon: Crown },
 ] as const;
 
 interface AppShellProps {
