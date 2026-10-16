@@ -282,3 +282,33 @@ export async function listCollectiveAgreements(): Promise<PublicAgreement[]> {
 
   return json.data;
 }
+
+export async function createBillingCheckout(): Promise<{ url: string }> {
+  const response = await fetch(`${API_URL}/billing/checkout`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<{ url: string }> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte starta checkout');
+  }
+
+  return json.data;
+}
+
+export async function createBillingPortal(): Promise<{ url: string }> {
+  const response = await fetch(`${API_URL}/billing/portal`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<{ url: string }> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte öppna portal');
+  }
+
+  return json.data;
+}

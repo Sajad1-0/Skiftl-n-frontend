@@ -4,6 +4,8 @@ export interface PublicUser {
   lastName: string | null;
   email: string;
   isPremium: boolean;
+  /** True om Stripe-kund finns — då kan portal öppnas. */
+  hasStripeCustomer: boolean;
   monthlySalaryGoal: number | null;
   createdAt: string;
   updatedAt: string;
