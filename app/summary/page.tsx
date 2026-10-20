@@ -55,6 +55,7 @@ export default function MonthlySummaryPage() {
             <h1 className="text-2xl font-semibold tracking-tight">Månadssammanfattning</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Brutto, skatt ({taxModeLabel}) och netto denna månad
+              {user.isPremium ? '' : ' · Gratis: schablon + bara innevarande månad'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2 self-start">

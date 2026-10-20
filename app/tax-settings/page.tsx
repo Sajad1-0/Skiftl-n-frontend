@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState, useEffect, useState } from 'react';
+import { Crown } from 'lucide-react';
 import { PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
@@ -28,6 +29,8 @@ export default function TaxSettingsPage() {
   const [settings, setSettings] = useState<PublicTaxSettings | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const isPremium = user?.isPremium === true;
 
   useEffect(() => {
     if (!user) return;
@@ -57,6 +60,12 @@ export default function TaxSettingsPage() {
 
   const [state, formAction, isPending] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
+      if (!isPremium) {
+        return {
+          error: 'Skattetabell kräver Premium. Använd manuell % på jobbprofilen',
+          success: null,
+        };
+      }
       const taxYear = Number(formData.get('taxYear'));
       const tableNumber = Number(formData.get('tableNumber'));
       const columnNumber = Number(formData.get('columnNumber'));
@@ -113,91 +122,113 @@ export default function TaxSettingsPage() {
           <CardHeader>
             <CardTitle>Skatteinställningar</CardTitle>
             <CardDescription>
-              Välj Skatteverkets tabellnummer (finns på lönespecen). Kolumn 1 gäller vanlig lön.
-              Månadsnetto räknas från ackumulerat brutto — inte per pass.
+              {isPremium
+                ? 'Välj Skatteverkets tabellnummer (finns på lönespecen). Kolumn 1 gäller vanlig lön.'
+                : 'Gratisplan använder manuell skattesats (%) på jobbprofilen. Skattetabell ingår i Premium.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {loadError ? <PageError message={loadError} variant="inline" className="mb-4" /> : null}
 
-            <form action={formAction}>
-              <div className="space-y-2">
-                <Label htmlFor="taxYear">Skatteår</Label>
-                <Input
-                  id="taxYear"
-                  name="taxYear"
-                  type="number"
-                  required
-                  min={2000}
-                  max={2100}
-                  defaultValue={defaultYear}
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tableNumber">Tabellnummer</Label>
-                <select
-                  name="tableNumber"
-                  id="tableNumber"
-                  defaultValue={defaultTable}
-                  className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                >
-                  {TABLE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>
-                      Tabell {n}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Högre nummer ≈ högre kommunalskatt. Hitta ditt på Skatteverket / lönespec.
+            {!isPremium ? (
+              <div className="mb-6 space-y-3 rounded-lg border border-border bg-muted/40 p-4">
+                <p className="text-sm text-muted-foreground">
+                  {settings
+                    ? 'Du har sparade tabellvärden, men de används inte förrän du uppgradera. Ändra manuell % under Jobbprofiler.'
+                    : 'Sätt skattesats på din jobbprofil. Uppgradera för Skatteverkets tabell + mer exakt netto.'}
                 </p>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="columnNumber">Kolumn</Label>
-                <select
-                  id="columnNumber"
-                  name="columnNumber"
-                  defaultValue={defaultColumn}
-                  className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                >
-                  {[1, 2, 3, 4, 5, 6].map((n) => (
-                    <option key={n} value={n}>
-                      Kolumn {n}
-                      {n === 1 ? ' (lön — vanligt)' : ''}
-                    </option>
-                  ))}
-                </select>
+                <Button asChild className="gap-1.5">
+                  <Link href="/premium">
+                    <Crown className="size-4" />
+                    Uppgradera till Premium
+                  </Link>
+                </Button>
               </div>
+            ) : null}
 
-              <div className="space-y-2">
-                <Label htmlFor="dayType">Tabelltyp</Label>
-                <select
-                  id="dayType"
-                  name="dayType"
-                  defaultValue={defaultDayType}
-                  className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                >
-                  <option value="30B">30B — månadslön (rekommenderas)</option>
-                  <option value="30%">30% — höga inkomster (sällan manuell)</option>
-                </select>
-              </div>
+            <form action={formAction}>
+              <fieldset disabled={!isPremium} className="space-y-4 disabled:opacity-60">
+                <div className="space-y-2">
+                  <Label htmlFor="taxYear">Skatteår</Label>
+                  <Input
+                    id="taxYear"
+                    name="taxYear"
+                    type="number"
+                    required
+                    min={2000}
+                    max={2100}
+                    defaultValue={defaultYear}
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tableNumber">Tabellnummer</Label>
+                  <select
+                    name="tableNumber"
+                    id="tableNumber"
+                    defaultValue={defaultTable}
+                    className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    {TABLE_OPTIONS.map((n) => (
+                      <option key={n} value={n}>
+                        Tabell {n}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    Högre nummer ≈ högre kommunalskatt. Hitta ditt på Skatteverket / lönespec.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="columnNumber">Kolumn</Label>
+                  <select
+                    id="columnNumber"
+                    name="columnNumber"
+                    defaultValue={defaultColumn}
+                    className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((n) => (
+                      <option key={n} value={n}>
+                        Kolumn {n}
+                        {n === 1 ? ' (lön — vanligt)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dayType">Tabelltyp</Label>
+                  <select
+                    id="dayType"
+                    name="dayType"
+                    defaultValue={defaultDayType}
+                    className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    <option value="30B">30B — månadslön (rekommenderas)</option>
+                    <option value="30%">30% — höga inkomster (sällan manuell)</option>
+                  </select>
+                </div>
+              </fieldset>
 
               {state.error ? <PageError message={state.error} /> : null}
 
               {state.success ? (
                 <p
-                  className="rounded-lg border border-primary/20 bg-emerald-500 px-3 py-2 text-sm text-foreground mt-4"
+                  className="mt-4 rounded-lg border border-primary/20 bg-emerald-500/10 px-3 py-2 text-sm text-foreground"
                   role="status"
                 >
                   {state.success}
                 </p>
               ) : null}
 
-              <Button type="submit" disabled={isPending} size="lg" className="h-11 w-full mt-4">
-                {isPending ? 'Sparar…' : 'Spara'}
-              </Button>
+              {isPremium ? (
+                <Button type="submit" disabled={isPending} size="lg" className="mt-4 h-11 w-full">
+                  {isPending ? 'Sparar…' : 'Spara'}
+                </Button>
+              ) : null}
             </form>
 
             <p className="mt-6 text-sm text-muted-foreground">
@@ -205,7 +236,7 @@ export default function TaxSettingsPage() {
                 Till månadssammanfattning
               </Link>
               {' · '}
-              Utan sparad tabell används schablonskatt från jobbprofilen.
+              Utan sparad tabell (eller utan Premium) används schablon från jobbprofilen.
             </p>
           </CardContent>
         </Card>
