@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Archive, ArchiveRestore, Crown, Plus, Trash2, Pencil } from 'lucide-react';
 import { PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
@@ -19,9 +19,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { deleteJobProfile, listJobProfiles, listCollectiveAgreements } from '@/lib/api';
+import {
+  archiveJobProfile,
+  deleteJobProfile,
+  listJobProfiles,
+  listCollectiveAgreements,
+  unarchiveJobProfile,
+} from '@/lib/api';
 import { formatKronor } from '@/lib/money';
 import type { PublicAgreement, PublicJobProfile } from '@/lib/types';
+
+const FREE_CAP = 1;
+const PREMIUM_CAP = 5;
 
 export default function JobProfilesPage() {
   const { user, userName, isLoading: authLoading, error: authError } = useAuthUser();
@@ -31,6 +40,8 @@ export default function JobProfilesPage() {
   const [isPending, startTransition] = useTransition();
   const [agreements, setAgreements] = useState<PublicAgreement[]>([]);
 
+  const isPremium = user?.isPremium === true;
+
   useEffect(() => {
     if (!user) return;
 
@@ -38,7 +49,9 @@ export default function JobProfilesPage() {
 
     async function load() {
       try {
-        const profileData = await listJobProfiles();
+        const profileData = await listJobProfiles({
+          includeArchived: user?.isPremium === true,
+        });
         if (!cancelled) {
           setProfiles(profileData);
           setError(null);
@@ -68,13 +81,48 @@ export default function JobProfilesPage() {
   const agreementName = (id: string | null) =>
     id ? (agreements.find((a) => a.id === id)?.name ?? 'Okänt avtal') : '—';
 
+  const activeProfiles = profiles.filter((p) => p.archivedAt == null);
+  const activeCount = activeProfiles.length;
+  const cap = isPremium ? PREMIUM_CAP : FREE_CAP;
+  const canCreate = activeCount < cap;
+  const canArchive = activeCount > 1;
+
+  function reloadProfiles() {
+    return listJobProfiles({ includeArchived: isPremium }).then(setProfiles);
+  }
+
   function handleDelete(id: string) {
     startTransition(async () => {
       try {
         await deleteJobProfile(id);
         setProfiles((current) => current.filter((profile) => profile.id !== id));
+        setError(null);
       } catch (deleteError) {
         setError(deleteError instanceof Error ? deleteError.message : 'Kunde inte ta bort profil');
+      }
+    });
+  }
+
+  function handleArchive(id: string) {
+    startTransition(async () => {
+      try {
+        await archiveJobProfile(id);
+        await reloadProfiles();
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Kunde inte arkivera profil');
+      }
+    });
+  }
+
+  function handleUnarchive(id: string) {
+    startTransition(async () => {
+      try {
+        await unarchiveJobProfile(id);
+        await reloadProfiles();
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Kunde inte återställa profil');
       }
     });
   }
@@ -93,15 +141,30 @@ export default function JobProfilesPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Jobbprofiler</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Hantera jobbprofiler, timlön och skattesats. Gratisplan: max en profil.
+              {isPremium
+                ? `Premium: ${activeCount}/${PREMIUM_CAP} aktiva profiler. Arkiverade syns nedan.`
+                : `Gratisplan: ${activeCount}/${FREE_CAP} aktiv profil. Uppgradera för upp till ${PREMIUM_CAP}.`}
             </p>
           </div>
-          <Button asChild size="lg" className="h-10 gap-1.5 self-start">
-            <Link href="/job-profiles/new">
-              <Plus className="size-4" />
-              Skapa profil
-            </Link>
-          </Button>
+          {canCreate ? (
+            <Button asChild size="lg" className="h-10 gap-1.5 self-start">
+              <Link href="/job-profiles/new">
+                <Plus className="size-4" />
+                Skapa profil
+              </Link>
+            </Button>
+          ) : isPremium ? (
+            <Button type="button" size="lg" variant="outline" className="h-10 self-start" disabled>
+              Max {PREMIUM_CAP} aktiva — arkivera en
+            </Button>
+          ) : (
+            <Button asChild size="lg" variant="outline" className="h-10 gap-1.5 self-start">
+              <Link href="/premium">
+                <Crown className="size-4" />
+                Uppgradera för fler
+              </Link>
+            </Button>
+          )}
         </div>
 
         {displayError ? <PageError message={displayError} /> : null}
@@ -110,7 +173,12 @@ export default function JobProfilesPage() {
           <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle>Dina profiler</CardTitle>
-              <CardDescription>{profiles.length} sparade</CardDescription>
+              <CardDescription>
+                {activeCount} aktiva
+                {isPremium && profiles.length > activeCount
+                  ? ` · ${profiles.length - activeCount} arkiverade`
+                  : null}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -121,7 +189,7 @@ export default function JobProfilesPage() {
                     <TableHead>Skatt</TableHead>
                     <TableHead>Arbetsgivare</TableHead>
                     <TableHead>Avtal</TableHead>
-                    <TableHead className="w-20" />
+                    <TableHead className="w-28" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -138,48 +206,86 @@ export default function JobProfilesPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    profiles.map((profile) => (
-                      <TableRow key={profile.id}>
-                        <TableCell className="font-medium">
-                          <span className="inline-flex items-center gap-2">
-                            {profile.name}
-                            {profile.isPrimary ? <Badge variant="secondary">Primär</Badge> : null}
-                          </span>
-                        </TableCell>
-                        <TableCell className="tabular-nums">
-                          {formatKronor(profile.hourlyWage)}
-                        </TableCell>
-                        <TableCell className="tabular-nums">{profile.taxRate}%</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {profile.employerName ?? '—'}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {agreementName(profile.collectiveAgreementId)}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            asChild
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={`Redigera ${profile.name}`}
-                          >
-                            <Link href={`/job-profiles/${profile.id}/edit`}>
-                              <Pencil className="size-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            disabled={isPending}
-                            onClick={() => handleDelete(profile.id)}
-                            aria-label={`Ta bort ${profile.name}`}
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    profiles.map((profile) => {
+                      const archived = profile.archivedAt != null;
+                      return (
+                        <TableRow
+                          key={profile.id}
+                          className={archived ? 'opacity-60' : undefined}
+                        >
+                          <TableCell className="font-medium">
+                            <span className="inline-flex flex-wrap items-center gap-2">
+                              {profile.name}
+                              {profile.isPrimary && !archived ? (
+                                <Badge variant="secondary">Primär</Badge>
+                              ) : null}
+                              {archived ? <Badge variant="outline">Arkiverad</Badge> : null}
+                            </span>
+                          </TableCell>
+                          <TableCell className="tabular-nums">
+                            {formatKronor(profile.hourlyWage)}
+                          </TableCell>
+                          <TableCell className="tabular-nums">{profile.taxRate}%</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {profile.employerName ?? '—'}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {agreementName(profile.collectiveAgreementId)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-0.5">
+                              {!archived ? (
+                                <>
+                                  <Button
+                                    asChild
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label={`Redigera ${profile.name}`}
+                                  >
+                                    <Link href={`/job-profiles/${profile.id}/edit`}>
+                                      <Pencil className="size-4" />
+                                    </Link>
+                                  </Button>
+                                  {canArchive ? (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      disabled={isPending}
+                                      onClick={() => handleArchive(profile.id)}
+                                      aria-label={`Arkivera ${profile.name}`}
+                                    >
+                                      <Archive className="size-4" />
+                                    </Button>
+                                  ) : null}
+                                </>
+                              ) : isPremium ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  disabled={isPending || activeCount >= PREMIUM_CAP}
+                                  onClick={() => handleUnarchive(profile.id)}
+                                  aria-label={`Återställ ${profile.name}`}
+                                >
+                                  <ArchiveRestore className="size-4" />
+                                </Button>
+                              ) : null}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={isPending}
+                                onClick={() => handleDelete(profile.id)}
+                                aria-label={`Ta bort ${profile.name}`}
+                              >
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -189,15 +295,31 @@ export default function JobProfilesPage() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Skapa jobbprofil</CardTitle>
-              <CardDescription>Lägg till timlön och skatt för ett jobb.</CardDescription>
+              <CardDescription>
+                {canCreate
+                  ? 'Lägg till timlön och skatt för ett jobb.'
+                  : isPremium
+                    ? 'Du har nått max 5 aktiva. Arkivera en profil för att skapa ny.'
+                    : 'Gratisplan tillåter en profil. Uppgradera till Premium för fler.'}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Formuläret finns på en egen sida så validering och API-anrop hålls enkla.
-              </p>
-              <Button asChild className="w-full" size="lg">
-                <Link href="/job-profiles/new">Öppna formulär</Link>
-              </Button>
+              {canCreate ? (
+                <Button asChild className="w-full" size="lg">
+                  <Link href="/job-profiles/new">Öppna formulär</Link>
+                </Button>
+              ) : isPremium ? (
+                <Button type="button" className="w-full" size="lg" variant="outline" disabled>
+                  Max {PREMIUM_CAP} aktiva — arkivera en
+                </Button>
+              ) : (
+                <Button asChild className="w-full gap-1.5" size="lg" variant="outline">
+                  <Link href="/premium">
+                    <Crown className="size-4" />
+                    Uppgradera till Premium
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -86,8 +86,14 @@ export async function getCurrentUser(): Promise<PublicUser> {
   return json.data;
 }
 
-export async function listJobProfiles(): Promise<PublicJobProfile[]> {
-  const response = await fetch(`${API_URL}/job-profiles`, {
+export async function listJobProfiles(params?: {
+  includeArchived?: boolean;
+}): Promise<PublicJobProfile[]> {
+  const search = new URLSearchParams();
+  if (params?.includeArchived) search.set('includeArchived', 'true');
+  const qs = search.toString();
+
+  const response = await fetch(`${API_URL}/job-profiles${qs ? `?${qs}` : ''}`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -95,7 +101,7 @@ export async function listJobProfiles(): Promise<PublicJobProfile[]> {
   const json = await parseJson<ApiSuccess<PublicJobProfile[]> | ApiError>(response);
 
   if (!response.ok || !json.success) {
-    throw new Error(!json.success ? json.message : 'Kunde inte hämta jobbProfiler');
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta jobbprofiler');
   }
 
   return json.data;
@@ -162,6 +168,34 @@ export async function deleteJobProfile(id: string): Promise<void> {
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte ta bort jobbprofil');
   }
+}
+
+export async function archiveJobProfile(id: string): Promise<PublicJobProfile> {
+  const response = await fetch(`${API_URL}/job-profiles/${id}/archive`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicJobProfile> | ApiError>(response);
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte arkivera profil');
+  }
+
+  return json.data;
+}
+
+export async function unarchiveJobProfile(id: string): Promise<PublicJobProfile> {
+  const response = await fetch(`${API_URL}/job-profiles/${id}/unarchive`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicJobProfile> | ApiError>(response);
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte återställa profil');
+  }
+
+  return json.data;
 }
 
 export async function listShifts(params?: { from?: string; to?: string }): Promise<PublicShift[]> {

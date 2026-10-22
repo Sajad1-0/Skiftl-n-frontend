@@ -26,6 +26,7 @@ export interface PublicJobProfile {
   employerName: string | null;
   isPrimary: boolean;
   collectiveAgreementId: string | null;
+  archivedAt: string | null;
   createdAt: string;
 }
 
