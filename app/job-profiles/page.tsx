@@ -308,11 +308,15 @@ export default function JobProfilesPage() {
                 <Button asChild className="w-full" size="lg">
                   <Link href="/job-profiles/new">Öppna formulär</Link>
                 </Button>
+              ) : isPremium ? (
+                <Button type="button" className="w-full" size="lg" variant="outline" disabled>
+                  Max {PREMIUM_CAP} aktiva — arkivera en
+                </Button>
               ) : (
                 <Button asChild className="w-full gap-1.5" size="lg" variant="outline">
                   <Link href="/premium">
                     <Crown className="size-4" />
-                    {isPremium ? 'Gå till Premium' : 'Uppgradera till Premium'}
+                    Uppgradera till Premium
                   </Link>
                 </Button>
               )}
