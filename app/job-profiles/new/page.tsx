@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { createJobProfile, listCollectiveAgreements } from '@/lib/api';
+import { createJobProfile, listCollectiveAgreements, listJobProfiles } from '@/lib/api';
 import { kronorToOre } from '@/lib/money';
 import type { PublicAgreement } from '@/lib/types';
 
@@ -26,6 +26,7 @@ export default function NewJobProfilePage() {
   const router = useRouter();
   const { user, userName, isLoading: authLoading } = useAuthUser();
   const [agreements, setAgreements] = useState<PublicAgreement[]>([]);
+  const [blockedReason, setBlockedReason] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -38,6 +39,25 @@ export default function NewJobProfilePage() {
       })
       .catch(() => {
         if (!cancelled) setAgreements([]);
+      });
+
+    void listJobProfiles()
+      .then((profiles) => {
+        if (cancelled) return;
+        const active = profiles.filter((p) => p.archivedAt == null).length;
+        const cap = user.isPremium ? 5 : 1;
+        if (active >= cap) {
+          setBlockedReason(
+            user.isPremium
+              ? 'Du har redan 5 aktiva profiler. Arkivera en först.'
+              : 'Gratisplan tillåter en profil. Uppgradera till Premium för fler.',
+          );
+        } else {
+          setBlockedReason(null);
+        }
+      })
+      .catch(() => {
+        /* create-form fungerar ändå; backend gate */
       });
 
     return () => {
@@ -95,7 +115,21 @@ export default function NewJobProfilePage() {
             <CardDescription>Ange timlön i kronor. Vi sparar den som öre i API:t.</CardDescription>
           </CardHeader>
           <CardContent>
+            {blockedReason ? (
+              <div className="mb-4 space-y-3 rounded-lg border border-border bg-muted/40 p-4">
+                <p className="text-sm text-muted-foreground">{blockedReason}</p>
+                <Button asChild variant="outline">
+                  <Link href={user?.isPremium ? '/job-profiles' : '/premium'}>
+                    {user?.isPremium ? 'Tillbaka till profiler' : 'Uppgradera till Premium'}
+                  </Link>
+                </Button>
+              </div>
+            ) : null}
             <form action={formAction} className="flex flex-col gap-4">
+              <fieldset
+                disabled={!!blockedReason}
+                className="flex flex-col gap-4 disabled:opacity-60"
+              >
               <div className="space-y-2">
                 <Label htmlFor="name">Namn</Label>
                 <Input
@@ -182,9 +216,15 @@ export default function NewJobProfilePage() {
 
               {state.error ? <PageError message={state.error} /> : null}
 
-              <Button type="submit" disabled={isPending} size="lg" className="h-11 w-full">
+              <Button
+                type="submit"
+                disabled={isPending || !!blockedReason}
+                size="lg"
+                className="h-11 w-full"
+              >
                 {isPending ? 'Sparar…' : 'Skapa profil'}
               </Button>
+              </fieldset>
             </form>
 
             <p className="mt-6 text-sm text-muted-foreground">
