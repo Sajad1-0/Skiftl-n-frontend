@@ -21,6 +21,8 @@ import { formatKronor } from '@/lib/money';
 import { listJobProfiles, deleteShift } from '@/lib/api';
 import type { PublicJobProfile } from '@/lib/types';
 import { useMonthShiftStats } from '@/hooks/use-month-shift-stats';
+import { MonthPicker } from '@/components/history/month-picker';
+import { formatYearMonthSv } from '@/lib/month-bounds';
 
 function formatWhen(iso: string): string {
   return new Intl.DateTimeFormat('sv-SE', {
@@ -30,8 +32,19 @@ function formatWhen(iso: string): string {
 }
 
 export default function ShiftPage() {
-  const { userName, shifts, stats, isLoading, error, setShifts, setError, reloadShifts } =
-    useMonthShiftStats();
+  const {
+    userName,
+    user,
+    shifts,
+    stats,
+    isLoading,
+    error,
+    setShifts,
+    setError,
+    reloadShifts,
+    selectedMonth,
+    setSelectedMonth,
+  } = useMonthShiftStats();
   const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
   const [isPending, startTransition] = useTransition();
 
@@ -88,17 +101,29 @@ export default function ShiftPage() {
               {stats.totalObOre > 0 ? ` · ${formatKronor(stats.totalObOre)} OB` : ''}
             </p>
           </div>
-          <Button asChild className="gap-1.5 self-start">
-            <Link href="/shifts/new">
-              <Plus className="size-4" />
-              Logga pass
-            </Link>
-          </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+            {user?.isPremium ? (
+              <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
+            ) : (
+              <p className="max-w-xs text-xs text-muted-foreground">
+                Bara innevarande månad.{' '}
+                <Link href="/premium" className="underline underline-offset-4">
+                  Premium: 6 månader
+                </Link>
+              </p>
+            )}
+            <Button asChild className="gap-1.5 self-start">
+              <Link href="/shifts/new">
+                <Plus className="size-4" />
+                Logga pass
+              </Link>
+            </Button>
+          </div>
         </div>
         {error ? <PageError message={error} variant="inline" /> : null}
         <Card>
           <CardHeader>
-            <CardTitle>Denna månad</CardTitle>
+            <CardTitle>{formatYearMonthSv(selectedMonth)}</CardTitle>
             <CardDescription>
               Est. netto = ungefärligt efter skatt (tabellmarginal eller schablon). Ändras om du
               lägger till/tar bort tidigare pass samma månad. Brutto är snapshot.
