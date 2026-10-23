@@ -21,9 +21,12 @@ import StateCard from '@/components/state-card';
 import { useMonthlySummary } from '@/hooks/use-monthly-summary';
 import { formatKronor } from '@/lib/money';
 import { MONTHLY_HOUR_TARGET } from '@/lib/shift-stats';
+import { MonthPicker } from '@/components/history/month-picker';
+import { formatYearMonthSv } from '@/lib/month-bounds';
 
 export default function MonthlySummaryPage() {
-  const { user, userName, summary, isLoading, error } = useMonthlySummary();
+  const { user, userName, summary, isLoading, error, selectedMonth, setSelectedMonth } =
+    useMonthlySummary();
 
   if (isLoading) {
     return <PageLoading label="Laddar sammanfattning…" />;
@@ -54,11 +57,19 @@ export default function MonthlySummaryPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Månadssammanfattning</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Brutto, skatt ({taxModeLabel}) och netto denna månad
+              Brutto, skatt ({taxModeLabel}) och netto — {formatYearMonthSv(selectedMonth)}
               {user.isPremium ? '' : ' · Gratis: schablon + bara innevarande månad'}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 self-start">
+          <div className="flex flex-wrap items-end gap-2 self-start">
+            {user.isPremium ? (
+              <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
+            ) : null}
+            {user.isPremium ? (
+              <Button asChild variant="outline">
+                <Link href="/summary/compare">Jämför månader</Link>
+              </Button>
+            ) : null}
             <Button asChild variant="outline">
               <Link href="/tax-settings">Skatteinställningar</Link>
             </Button>

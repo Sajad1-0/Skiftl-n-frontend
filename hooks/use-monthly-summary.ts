@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, getMonthlySummary } from '@/lib/api';
 import { clearToken, getToken } from '@/lib/auth-storage';
-import { monthBounds } from '@/lib/month-bounds';
+import { currentYearMonth, monthBoundsFor, type YearMonth } from '@/lib/month-bounds';
 import { formatUserName } from './use-auth-user';
 import type { MonthlySummary, PublicUser } from '@/lib/types';
 
@@ -14,6 +14,8 @@ export interface UseMonthlySummaryResult {
   summary: MonthlySummary | null;
   isLoading: boolean;
   error: string | null;
+  selectedMonth: YearMonth;
+  setSelectedMonth: Dispatch<SetStateAction<YearMonth>>;
 }
 
 export function useMonthlySummary(): UseMonthlySummaryResult {
@@ -22,24 +24,29 @@ export function useMonthlySummary(): UseMonthlySummaryResult {
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<YearMonth>(currentYearMonth);
 
   useEffect(() => {
     let cancelled = false;
-
     async function load() {
       if (!getToken()) {
         router.replace('/login');
         if (!cancelled) setIsLoading(false);
         return;
       }
-
       try {
         const me = await getCurrentUser();
         if (cancelled) return;
         setUser(me);
-
+        const month = me.isPremium ? selectedMonth : currentYearMonth();
+        if (
+          !me.isPremium &&
+          (selectedMonth.year !== month.year || selectedMonth.month !== month.month)
+        ) {
+          setSelectedMonth(month);
+        }
         try {
-          const data = await getMonthlySummary(monthBounds());
+          const data = await getMonthlySummary(monthBoundsFor(month));
           if (!cancelled) {
             setSummary(data);
             setError(null);
@@ -67,7 +74,7 @@ export function useMonthlySummary(): UseMonthlySummaryResult {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, selectedMonth]);
 
   return {
     user: user,
@@ -75,5 +82,7 @@ export function useMonthlySummary(): UseMonthlySummaryResult {
     summary,
     isLoading,
     error,
+    selectedMonth,
+    setSelectedMonth,
   };
 }

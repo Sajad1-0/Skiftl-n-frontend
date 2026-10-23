@@ -4,7 +4,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, listShifts } from '@/lib/api';
 import { clearToken, getToken } from '@/lib/auth-storage';
-import { monthBounds } from '@/lib/month-bounds';
+import { currentYearMonth, monthBoundsFor, type YearMonth } from '@/lib/month-bounds';
 import { summarizeShifts, type ShiftMonthStats } from '@/lib/shift-stats';
 import { formatUserName } from '@/hooks/use-auth-user';
 import type { PublicShift, PublicUser } from '@/lib/types';
@@ -16,6 +16,8 @@ export interface UseMonthShiftStatsResult {
   stats: ShiftMonthStats;
   isLoading: boolean;
   error: string | null;
+  selectedMonth: YearMonth;
+  setSelectedMonth: Dispatch<SetStateAction<YearMonth>>;
   setShifts: Dispatch<SetStateAction<PublicShift[]>>;
   setError: Dispatch<SetStateAction<string | null>>;
   /** Ladda om månadens pass (t.ex. efter delete så est. netto uppdateras). */
@@ -28,9 +30,11 @@ export function useMonthShiftStats(): UseMonthShiftStatsResult {
   const [shifts, setShifts] = useState<PublicShift[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<YearMonth>(currentYearMonth);
 
   async function reloadShifts(): Promise<void> {
-    const monthShifts = await listShifts(monthBounds());
+    const month = user?.isPremium ? selectedMonth : currentYearMonth();
+    const monthShifts = await listShifts(monthBoundsFor(month));
     setShifts(monthShifts);
     setError(null);
   }
@@ -50,17 +54,24 @@ export function useMonthShiftStats(): UseMonthShiftStatsResult {
         if (cancelled) return;
         setUser(me);
 
+        // Free: Lås till innevarande månad
+        const month = me.isPremium ? selectedMonth : currentYearMonth();
+        if (
+          !me.isPremium &&
+          (selectedMonth.year !== month.year || selectedMonth.month !== month.month)
+        ) {
+          setSelectedMonth(month);
+        }
+
         try {
-          const monthShifts = await listShifts(monthBounds());
+          const monthShifts = await listShifts(monthBoundsFor(month));
           if (!cancelled) {
             setShifts(monthShifts);
             setError(null);
           }
         } catch (shiftError) {
           if (!cancelled) {
-            setError(
-              shiftError instanceof Error ? shiftError.message : 'Kunde inte ladda pass',
-            );
+            setError(shiftError instanceof Error ? shiftError.message : 'Kunde inte ladda pass');
           }
         }
       } catch (authError) {
@@ -80,7 +91,7 @@ export function useMonthShiftStats(): UseMonthShiftStatsResult {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, selectedMonth]);
 
   const stats = summarizeShifts(shifts, user?.monthlySalaryGoal);
 
@@ -91,6 +102,8 @@ export function useMonthShiftStats(): UseMonthShiftStatsResult {
     stats,
     isLoading,
     error,
+    selectedMonth,
+    setSelectedMonth,
     setShifts,
     setError,
     reloadShifts,
