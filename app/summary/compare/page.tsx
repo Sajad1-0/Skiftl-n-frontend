@@ -86,6 +86,8 @@ export default function CompareMonthPage() {
         }
       } catch (err) {
         if (!cancelled) {
+          setSummaryA(null);
+          setSummaryB(null);
           setError(err instanceof Error ? err.message : 'Kunde inte jämföra');
           setLoadedKey(loadKey);
         }
