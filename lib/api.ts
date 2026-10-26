@@ -4,6 +4,7 @@ import type {
   AuthSuccessData,
   CreateJobProfileBody,
   CreateShiftBody,
+  BulkCreateShiftsBody,
   LoginBody,
   MonthlySummary,
   PublicUser,
@@ -229,6 +230,22 @@ export async function createShift(body: CreateShiftBody): Promise<PublicShift> {
 
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte skapa passet');
+  }
+
+  return json.data;
+}
+
+export async function createBulkShifts(body: BulkCreateShiftsBody): Promise<PublicShift[]> {
+  const response = await fetch(`${API_URL}/shifts/bulk`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicShift[]> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte skapa passen');
   }
 
   return json.data;
