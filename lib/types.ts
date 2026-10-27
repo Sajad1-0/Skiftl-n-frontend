@@ -92,6 +92,7 @@ export interface ProfileBreakDown {
   baseOre: number;
   obOre: number;
   grossOre: number;
+  taxOre: number;
   netOre: number;
 }
 

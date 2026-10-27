@@ -93,8 +93,8 @@ export default function MonthlySummaryPage() {
               <CardTitle>Per jobbprofil</CardTitle>
               <CardDescription>
                 {summary?.taxMode === 'table'
-                  ? 'Netto per profil är fördelat proportionellt från månadsskatt (tabell).'
-                  : 'Netto beräknas med jobbprofilens schablonskatt (%).'}
+                  ? 'Skatt och netto per profil är fördelat proportionellt från månadsskatt (tabell).'
+                  : 'Skatt och netto beräknas med jobbprofilens schablonskatt (%).'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -129,7 +129,7 @@ export default function MonthlySummaryPage() {
                           {(row.workedMinutes / 60).toFixed(1)} h
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {summary?.taxMode === 'table' ? '—' : `${row.taxRate}%`}
+                          {formatKronor(row.taxOre)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {formatKronor(row.obOre)}
