@@ -232,7 +232,7 @@ export default function BulkShiftsPage() {
                   {rows.map((row, index) => (
                     <div
                       key={row.key}
-                      className="flex -flex-col gap-3 rounded-lg border border-border p-4"
+                      className="flex flex-col gap-3 rounded-lg border border-border p-4"
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">Pass {index + 1}</p>
