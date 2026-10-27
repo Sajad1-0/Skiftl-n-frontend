@@ -72,6 +72,16 @@ export interface CreateShiftBody {
   notes?: string;
 }
 
+export interface BulkCreateShiftsBody {
+  jobProfileId: string;
+  shifts: Array<{
+    startAt: string;
+    endAt: string;
+    breakMinutes?: number;
+    notes?: string;
+  }>;
+}
+
 export interface ProfileBreakDown {
   jobProfileId: string;
   name: string;

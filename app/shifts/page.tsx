@@ -112,12 +112,23 @@ export default function ShiftPage() {
                 </Link>
               </p>
             )}
-            <Button asChild className="gap-1.5 self-start">
-              <Link href="/shifts/new">
-                <Plus className="size-4" />
-                Logga pass
-              </Link>
-            </Button>
+            <div className="flex flex-wrap gap-2 self-start">
+              <Button asChild className="gap-1.5">
+                <Link href="/shifts/new">
+                  <Plus className="size-4" />
+                  Logga pass
+                </Link>
+              </Button>
+              {user?.isPremium ? (
+                <Button asChild variant="outline">
+                  <Link href="/shifts/bulk">Bulk-logg</Link>
+                </Button>
+              ) : (
+                <Button asChild variant="outline">
+                  <Link href="/premium">Bulk-logg (Premium)</Link>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
         {error ? <PageError message={error} variant="inline" /> : null}
