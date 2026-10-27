@@ -56,12 +56,23 @@ export default function DashboardPage() {
               Översikt över din arbetstid och lön den här månaden.
             </p>
           </div>
-          <Button asChild size="lg" className="h-10 gap-1.5 self-start sm:self-auto">
-            <Link href="/shifts/new">
-              <Plus className="size-4" />
-              Logga pass
-            </Link>
-          </Button>
+          <div className="flex flex-col gap-2 self-start sm:flex-row sm:self-auto">
+            <Button asChild size="lg" className="h-10 gap-1.5">
+              <Link href="/shifts/new">
+                <Plus className="size-4" />
+                Logga pass
+              </Link>
+            </Button>
+            {user.isPremium ? (
+              <Button asChild size="lg" variant="outline" className="h-10">
+                <Link href="/shifts/bulk">Bulk-logg</Link>
+              </Button>
+            ) : (
+              <Button asChild size="lg" variant="outline" className="h-10">
+                <Link href="/premium">Bulk-logg (Premium)</Link>
+              </Button>
+            )}
+          </div>
         </div>
 
         {summaryError ? (
