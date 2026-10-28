@@ -8,13 +8,18 @@ import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
+import BreakIntervalsEditor, {
+  draftsToBreakIntervals,
+  hasIncompleteBreakDrafts,
+  type BreakIntervalDraft,
+} from '@/components/shifts/break-intervals-editor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { createBulkShifts, listJobProfiles } from '@/lib/api';
-import type { PublicJobProfile } from '@/lib/types';
+import type { BulkCreateShiftsBody, PublicJobProfile } from '@/lib/types';
 
 const MAX_ROWS = 10;
 
@@ -22,8 +27,8 @@ interface BulkRow {
   key: string;
   startAt: string;
   endAt: string;
-  breakMinutes: string;
   notes: string;
+  intervals: BreakIntervalDraft[];
 }
 
 function emptyRow(): BulkRow {
@@ -31,8 +36,8 @@ function emptyRow(): BulkRow {
     key: crypto.randomUUID(),
     startAt: '',
     endAt: '',
-    breakMinutes: '0',
     notes: '',
+    intervals: [],
   };
 }
 
@@ -63,11 +68,9 @@ export default function BulkShiftsPage() {
         const primary = list.find((p) => p.isPrimary)?.id ?? list[0]?.id ?? '';
         setJobProfileId(primary);
         setProfilesError(null);
-      } catch (error: unknown) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          setProfilesError(
-            error instanceof Error ? error.message : 'Kunde inte ladda jobbprofiler',
-          );
+          setProfilesError(err instanceof Error ? err.message : 'Kunde inte ladda jobbprofiler');
         }
       } finally {
         if (!cancelled) setProfilesLoading(false);
@@ -103,22 +106,11 @@ export default function BulkShiftsPage() {
       return;
     }
 
-    const shifts: Array<{
-      startAt: string;
-      endAt: string;
-      breakMinutes: number;
-      notes?: string;
-    }> = [];
+    const shifts: BulkCreateShiftsBody['shifts'] = [];
 
     for (const row of rows) {
       if (!row.startAt || !row.endAt) {
         setError('Alla rader behöver start och slut tid');
-        return;
-      }
-
-      const breakMinutes = Number(row.breakMinutes);
-      if (!Number.isFinite(breakMinutes) || breakMinutes < 0) {
-        setError('Rast måste vara >= 0 minuter på varje rad');
         return;
       }
 
@@ -129,11 +121,30 @@ export default function BulkShiftsPage() {
         return;
       }
 
+      if (hasIncompleteBreakDrafts(row.intervals)) {
+        setError('Fyll i både start och slut för varje rast, eller ta bort raden');
+        return;
+      }
+      const breakIntervals = draftsToBreakIntervals(row.intervals);
+      for (const br of breakIntervals) {
+        if (new Date(br.endAt).getTime() <= new Date(br.startAt).getTime()) {
+          setError('Rast: slut måste vara efter start på varje rad');
+          return;
+        }
+        if (
+          new Date(br.startAt).getTime() < new Date(startAt).getTime() ||
+          new Date(br.endAt).getTime() > new Date(endAt).getTime()
+        ) {
+          setError('Rastintervall måste ligga inom passets start och slut');
+          return;
+        }
+      }
+
       const notes = row.notes.trim();
       shifts.push({
         startAt,
         endAt,
-        breakMinutes,
+        breakIntervals,
         ...(notes.length > 0 ? { notes } : {}),
       });
     }
@@ -142,8 +153,8 @@ export default function BulkShiftsPage() {
     try {
       await createBulkShifts({ jobProfileId, shifts });
       router.push('/shifts');
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Kunde inte skapa passen');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Kunde inte skapa passen');
     } finally {
       setIsPending(false);
     }
@@ -194,7 +205,8 @@ export default function BulkShiftsPage() {
           <CardHeader>
             <CardTitle>Bulk-logga pass</CardTitle>
             <CardDescription>
-              Samma jobbprofil för alla rader. Max {MAX_ROWS} pass per gång.
+              Samma jobbprofil för alla rader. Max {MAX_ROWS} pass per gång. Rast anges som
+              intervall.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -212,7 +224,7 @@ export default function BulkShiftsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="jobProfileId">Jobbprofil</Label>
                   <select
-                    name="jobbProfileId"
+                    name="jobProfileId"
                     id="jobProfileId"
                     value={jobProfileId}
                     onChange={(e) => setJobProfileId(e.target.value)}
@@ -271,30 +283,21 @@ export default function BulkShiftsPage() {
                           />
                         </div>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor={`break-${row.key}`}>Rast (minuter)</Label>
-                          <Input
-                            id={`break-${row.key}`}
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={row.breakMinutes}
-                            onChange={(e) => updateRow(row.key, { breakMinutes: e.target.value })}
-                            className="h-11"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`notes-${row.key}`}>Anteckning</Label>
-                          <Input
-                            id={`notes-${row.key}`}
-                            type="text"
-                            maxLength={2000}
-                            value={row.notes}
-                            onChange={(e) => updateRow(row.key, { notes: e.target.value })}
-                            className="h-11"
-                          />
-                        </div>
+                      <BreakIntervalsEditor
+                        value={row.intervals}
+                        onChange={(intervals) => updateRow(row.key, { intervals })}
+                        disabled={isPending}
+                      />
+                      <div className="space-y-2">
+                        <Label htmlFor={`notes-${row.key}`}>Anteckning</Label>
+                        <Input
+                          id={`notes-${row.key}`}
+                          type="text"
+                          maxLength={2000}
+                          value={row.notes}
+                          onChange={(e) => updateRow(row.key, { notes: e.target.value })}
+                          className="h-11"
+                        />
                       </div>
                     </div>
                   ))}
