@@ -47,6 +47,10 @@ export interface UpdateJobProfileBody {
   collectiveAgreementId?: string | null;
 }
 
+export interface BreakIntervalsDto {
+  startAt: string;
+  endAt: string;
+}
 export interface PublicShift {
   id: string;
   userId: string;
@@ -54,6 +58,7 @@ export interface PublicShift {
   startAt: string;
   endAt: string;
   breakMinutes: number;
+  breakIntervals?: BreakIntervalsDto[];
   notes: string | null;
   createdAt: string;
   workedMinutes: number;
@@ -69,6 +74,7 @@ export interface CreateShiftBody {
   startAt: string;
   endAt: string;
   breakMinutes?: number;
+  breakIntervals?: BreakIntervalsDto[];
   notes?: string;
 }
 
@@ -78,6 +84,7 @@ export interface BulkCreateShiftsBody {
     startAt: string;
     endAt: string;
     breakMinutes?: number;
+    breakIntervals?: BreakIntervalsDto[];
     notes?: string;
   }>;
 }
