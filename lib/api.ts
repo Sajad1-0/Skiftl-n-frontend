@@ -3,6 +3,7 @@ import type {
   ApiSuccess,
   AuthSuccessData,
   CreateJobProfileBody,
+  CreateSickLeaveBody,
   CreateShiftBody,
   BulkCreateShiftsBody,
   LoginBody,
@@ -11,6 +12,7 @@ import type {
   PublicJobProfile,
   PublicShift,
   PublicAgreement,
+  PublicSickLeave,
   RegisterBody,
   UpdateJobProfileBody,
   PublicTaxSettings,
@@ -261,6 +263,56 @@ export async function deleteShift(id: string): Promise<void> {
 
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte ta bort passet');
+  }
+}
+
+export async function listSickLeave(params?: {
+  from?: string;
+  to?: string;
+}): Promise<PublicSickLeave[]> {
+  const search = new URLSearchParams();
+  if (params?.from) search.set('from', params.from);
+  if (params?.to) search.set('to', params.to);
+  const qs = search.toString();
+
+  const response = await fetch(`${API_URL}/sick-leave${qs ? `?${qs}` : ''}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicSickLeave[]> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta sjukanmälningar');
+  }
+
+  return json.data;
+}
+
+export async function createSickLeave(body: CreateSickLeaveBody): Promise<PublicSickLeave> {
+  const response = await fetch(`${API_URL}/sick-leave`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicSickLeave> | ApiError>(response);
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte skapa sjukanmälan');
+  }
+
+  return json.data;
+}
+
+export async function deleteSickLeave(id: string): Promise<void> {
+  const response = await fetch(`${API_URL}/sick-leave/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<null> | ApiError>(response);
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte ta bort sjukanmälan');
   }
 }
 
