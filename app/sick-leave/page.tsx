@@ -76,6 +76,7 @@ export default function SickLeavePage() {
   }
 
   function handleDelete(id: string) {
+    if (!window.confirm('Ta bort denna sjukperiod?')) return;
     startTransition(async () => {
       try {
         await deleteSickLeave(id);
@@ -93,14 +94,23 @@ export default function SickLeavePage() {
   if (!user.isPremium) {
     return (
       <AppShell userName={userName}>
-        <FadeIn className="mx-auto max-w-lg space-y-4">
-          <h1 className="text-2xl font-semibold">Sjukanmälan</h1>
-          <p className="text-sm text-muted-foreground">
-            Karensdag + 80 % sjuklön på schemalagda dagar ingår i Premium.
-          </p>
-          <Button asChild>
-            <Link href="/premium">Uppgradera</Link>
-          </Button>
+        <FadeIn className="mx-auto w-full max-w-lg">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sjukanmälan</CardTitle>
+              <CardDescription>
+                Karensdag + 80 % sjuklön på schemalagda dagar ingår i Premium.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <Button asChild>
+                <Link href="/premium">Uppgradera</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/shifts">Tillbaka till pass</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </FadeIn>
       </AppShell>
     );
@@ -121,8 +131,8 @@ export default function SickLeavePage() {
             <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
             <Button asChild className="gap-1.5">
               <Link href="/sick-leave/new">
-                <Plus className="siz-4" />
-                Ny Period
+                <Plus className="size-4" />
+                Ny period
               </Link>
             </Button>
           </div>
@@ -142,7 +152,7 @@ export default function SickLeavePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Period</TableHead>
-                  <TableHead>Profile</TableHead>
+                  <TableHead>Profil</TableHead>
                   <TableHead>Karensdag</TableHead>
                   <TableHead className="text-right">Sjuklön</TableHead>
                   <TableHead className="w-12" />
@@ -152,7 +162,7 @@ export default function SickLeavePage() {
                 {periods.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                      Inga sjukanmälaninga.{' '}
+                      Inga sjukanmälningar.{' '}
                       <Link href="/sick-leave/new" className="underline underline-offset-4">
                         Skapa en period
                       </Link>
@@ -162,10 +172,10 @@ export default function SickLeavePage() {
                   periods.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="tabular-nums">
-                        {p.startDate} - {p.endDate}
+                        {p.startDate} – {p.endDate}
                       </TableCell>
                       <TableCell>{profileName(p.jobProfileId)}</TableCell>
-                      <TableCell className="tabular-nums">{p.karensdag ?? '_'}</TableCell>
+                      <TableCell className="tabular-nums">{p.karensdag ?? '—'}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatKronor(p.totalSickPayOre)}
                       </TableCell>
@@ -181,7 +191,6 @@ export default function SickLeavePage() {
                           <Trash2 className="size-4" />
                         </Button>
                       </TableCell>
-                      <TableCell></TableCell>
                     </TableRow>
                   ))
                 )}
