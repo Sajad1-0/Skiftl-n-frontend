@@ -89,6 +89,45 @@ export interface BulkCreateShiftsBody {
   }>;
 }
 
+export interface SickDayBreakdown {
+  date: string;
+  isKarendag: boolean;
+  workedMinutes: number;
+  sickPayOre: number;
+}
+
+export interface PublicSickLeave {
+  id: string;
+  userId: string;
+  jobProfileId: string;
+  startDate: string;
+  endDate: string;
+  notes: string | null;
+  createdAt: string;
+  karensdag: string | null;
+  totalSickPayOre: number;
+  totalWorkedMinutes: number;
+  days: SickDayBreakdown[];
+}
+
+export interface CreateSickLeaveBody {
+  jobProfileId: string;
+  startDate: string;
+  endDate: string;
+  notes?: string;
+}
+
+export interface SickLeaveSummaryRow {
+  periodId: string;
+  jobProfileId: string;
+  profileName: string;
+  startDate: string;
+  endDate: string;
+  karensdag: string | null;
+  sickPayOre: number;
+  days: SickDayBreakdown[];
+}
+
 export interface ProfileBreakDown {
   jobProfileId: string;
   name: string;
@@ -118,6 +157,8 @@ export interface MonthlySummary {
   goalOre: number | null;
   goalProgressPercent: number;
   byJobProfile: ProfileBreakDown[];
+  sickPayOre: number;
+  sickLeave: SickLeaveSummaryRow[];
 }
 
 export interface AuthSuccessData {

@@ -45,6 +45,7 @@ export default function MonthlySummaryPage() {
     { label: 'Pass', value: summary?.shiftCount ?? 0 },
     { label: 'Timmar', value: `${hours.toFixed(1)} h`, progress: hoursProgress },
     { label: 'Brutto', value: formatKronor(summary?.grossOre ?? 0) },
+    { label: 'Sjuklön', value: formatKronor(summary?.sickPayOre ?? 0) },
     { label: 'OB-tillägg', value: formatKronor(summary?.obOre ?? 0) },
     { label: 'Skatt', value: formatKronor(summary?.taxOre ?? 0) },
     { label: 'Netto', value: formatKronor(summary?.netOre ?? 0) },
@@ -148,7 +149,7 @@ export default function MonthlySummaryPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="lg:row-span-2">
             <CardHeader>
               <CardTitle>Lönemål (netto)</CardTitle>
               <CardDescription>
@@ -163,6 +164,46 @@ export default function MonthlySummaryPage() {
               </p>
             </CardContent>
           </Card>
+
+          {user.isPremium && (summary?.sickLeave?.length ?? 0) > 0 ? (
+            <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+                <div className="space-y-1.5">
+                  <CardTitle>Sjukanmälan</CardTitle>
+                  <CardDescription>Karensdag = 0 kr; övriga dagar 80 %</CardDescription>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/sick-leave">Hantera</Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Profil</TableHead>
+                      <TableHead>Karens</TableHead>
+                      <TableHead className="text-right">Sjuklön</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {summary!.sickLeave.map((row) => (
+                      <TableRow key={row.periodId}>
+                        <TableCell className="tabular-nums">
+                          {row.startDate} – {row.endDate}
+                        </TableCell>
+                        <TableCell>{row.profileName}</TableCell>
+                        <TableCell className="tabular-nums">{row.karensdag ?? '—'}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatKronor(row.sickPayOre)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </FadeIn>
     </AppShell>
