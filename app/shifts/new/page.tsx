@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { createShift, listJobProfiles } from '@/lib/api';
+import { syncEndAtFromStart } from '@/lib/shift-datetime';
 import type { PublicJobProfile } from '@/lib/types';
 
 /** datetime-local value → ISO UTC for API */
@@ -97,7 +98,7 @@ export default function NewShiftPage() {
           setError('Fyll i både start och slut för varje rast, eller ta bort raden');
           return;
         }
-        const breakIntervals = draftsToBreakIntervals(intervals);
+        const breakIntervals = draftsToBreakIntervals(intervals, startAt, endAt);
         for (const br of breakIntervals) {
           if (new Date(br.endAt).getTime() <= new Date(br.startAt).getTime()) {
             setError('Rast: slut måste vara efter start');
@@ -193,7 +194,11 @@ export default function NewShiftPage() {
                     type="datetime-local"
                     required
                     value={startAt}
-                    onChange={(e) => setStartAt(e.target.value)}
+                    onChange={(e) => {
+                      const nextStart = e.target.value;
+                      setEndAt((prevEnd) => syncEndAtFromStart(startAt, nextStart, prevEnd));
+                      setStartAt(nextStart);
+                    }}
                     className="h-11"
                   />
                 </div>
@@ -208,6 +213,9 @@ export default function NewShiftPage() {
                     onChange={(e) => setEndAt(e.target.value)}
                     className="h-11"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Fylls i från start. Ändra bara tiden om passet är samma dag.
+                  </p>
                 </div>
 
                 {isPremium ? (

@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { createBulkShifts, listJobProfiles } from '@/lib/api';
+import { syncEndAtFromStart } from '@/lib/shift-datetime';
 import type { BulkCreateShiftsBody, PublicJobProfile } from '@/lib/types';
 
 const MAX_ROWS = 10;
@@ -87,6 +88,20 @@ export default function BulkShiftsPage() {
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   }
 
+  function updateRowStart(key: string, nextStart: string) {
+    setRows((current) =>
+      current.map((row) =>
+        row.key === key
+          ? {
+              ...row,
+              startAt: nextStart,
+              endAt: syncEndAtFromStart(row.startAt, nextStart, row.endAt),
+            }
+          : row,
+      ),
+    );
+  }
+
   function addRow() {
     setRows((current) => (current.length >= MAX_ROWS ? current : [...current, emptyRow()]));
   }
@@ -125,7 +140,7 @@ export default function BulkShiftsPage() {
         setError('Fyll i både start och slut för varje rast, eller ta bort raden');
         return;
       }
-      const breakIntervals = draftsToBreakIntervals(row.intervals);
+      const breakIntervals = draftsToBreakIntervals(row.intervals, row.startAt, row.endAt);
       for (const br of breakIntervals) {
         if (new Date(br.endAt).getTime() <= new Date(br.startAt).getTime()) {
           setError('Rast: slut måste vara efter start på varje rad');
@@ -267,7 +282,7 @@ export default function BulkShiftsPage() {
                             type="datetime-local"
                             required
                             value={row.startAt}
-                            onChange={(e) => updateRow(row.key, { startAt: e.target.value })}
+                            onChange={(e) => updateRowStart(row.key, e.target.value)}
                             className="h-11"
                           />
                         </div>
