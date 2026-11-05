@@ -14,6 +14,7 @@ import {
   Percent,
   Crown,
   Thermometer,
+  Target,
 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { Logo } from '@/components/brand/logo';
@@ -28,6 +29,7 @@ const navItems = [
   { href: '/job-profiles', label: 'Jobbprofiler', icon: Briefcase },
   { href: '/shifts', label: 'Pass', icon: Clock },
   { href: '/sick-leave', label: 'Sjuk', icon: Thermometer },
+  { href: '/salary-goal', label: 'Lönemål', icon: Target },
   { href: '/summary', label: 'Sammanfattning', icon: PieChart },
   { href: '/tax-settings', label: 'Skatt', icon: Percent },
   { href: '/premium', label: 'Premium', icon: Crown },

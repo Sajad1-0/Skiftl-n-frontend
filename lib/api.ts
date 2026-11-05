@@ -14,6 +14,7 @@ import type {
   PublicAgreement,
   PublicSickLeave,
   RegisterBody,
+  SalaryGoal,
   UpdateJobProfileBody,
   PublicTaxSettings,
   UpsertTaxSettingsBody,
@@ -414,4 +415,78 @@ export async function createBillingPortal(): Promise<{ url: string }> {
   }
 
   return json.data;
+}
+
+export async function getSalaryGoal(): Promise<SalaryGoal> {
+  const response = await fetch(`${API_URL}/salary-goal`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<SalaryGoal> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta lönemål');
+  }
+
+  return json.data;
+}
+
+export async function upsertSalaryGoal(body: SalaryGoal): Promise<SalaryGoal> {
+  const response = await fetch(`${API_URL}/salary-goal`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const json = await parseJson<ApiSuccess<SalaryGoal> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte spara lönemål');
+  }
+
+  return json.data;
+}
+
+export async function downloadMonthlySummaryPdf(params: {
+  from: string;
+  to: string;
+  jobProfileId?: string;
+}): Promise<Blob> {
+  const search = new URLSearchParams();
+  search.set('from', params.from);
+  search.set('to', params.to);
+  if (params.jobProfileId) search.set('jobProfileId', params.jobProfileId);
+
+  const token = getToken();
+  if (!token) throw new Error('Ingen token - Logga in igen');
+
+  const response = await fetch(`${API_URL}/summaries/monthly/pdf?${search}`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    let message = 'kunde inte hämta PDF';
+    try {
+      const json = (await response.json()) as ApiError;
+      if (!json.success && json.message) message = json.message;
+    } catch {
+      // Ignore
+    }
+    throw new Error(message);
+  }
+
+  return response.blob();
+}
+
+export function triggerBlobDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
