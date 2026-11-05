@@ -133,7 +133,7 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Lönemål (netto)</CardTitle>
               <CardDescription>
-                {goalOre ? formatKronor(goalOre) : 'Inget mål satt ännu'}
+                {goalOre != null ? formatKronor(goalOre) : 'Inget mål satt ännu'}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-3 pb-6">
@@ -142,6 +142,15 @@ export default function DashboardPage() {
               <p className="text-2xl font-semibold tabular-nums">
                 {summary ? formatKronor(summary.netOre) : '—'}
               </p>
+              {user.isPremium ? (
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/salary-goal">Ändra mål</Link>
+                </Button>
+              ) : (
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/premium">Sätt mål (Premium)</Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>

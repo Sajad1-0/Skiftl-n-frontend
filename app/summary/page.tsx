@@ -22,11 +22,15 @@ import { useMonthlySummary } from '@/hooks/use-monthly-summary';
 import { formatKronor } from '@/lib/money';
 import { MONTHLY_HOUR_TARGET } from '@/lib/shift-stats';
 import { MonthPicker } from '@/components/history/month-picker';
-import { formatYearMonthSv } from '@/lib/month-bounds';
+import { formatYearMonthSv, monthBoundsFor, yearMonthKey } from '@/lib/month-bounds';
+import { useState } from 'react';
+import { downloadMonthlySummaryPdf, triggerBlobDownload } from '@/lib/api';
 
 export default function MonthlySummaryPage() {
   const { user, userName, summary, isLoading, error, selectedMonth, setSelectedMonth } =
     useMonthlySummary();
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [isPdfPending, setIsPdfPending] = useState(false);
 
   if (isLoading) {
     return <PageLoading label="Laddar sammanfattning…" />;
@@ -45,11 +49,28 @@ export default function MonthlySummaryPage() {
     { label: 'Pass', value: summary?.shiftCount ?? 0 },
     { label: 'Timmar', value: `${hours.toFixed(1)} h`, progress: hoursProgress },
     { label: 'Brutto', value: formatKronor(summary?.grossOre ?? 0) },
-    { label: 'Sjuklön', value: formatKronor(summary?.sickPayOre ?? 0) },
+    ...(user.isPremium
+      ? [{ label: 'Sjuklön', value: formatKronor(summary?.sickPayOre ?? 0) }]
+      : []),
     { label: 'OB-tillägg', value: formatKronor(summary?.obOre ?? 0) },
     { label: 'Skatt', value: formatKronor(summary?.taxOre ?? 0) },
     { label: 'Netto', value: formatKronor(summary?.netOre ?? 0) },
-  ] as const;
+  ];
+
+  async function handleDownloadPdf() {
+    if (isPdfPending) return;
+    setPdfError(null);
+    setIsPdfPending(true);
+    try {
+      const bounds = monthBoundsFor(selectedMonth);
+      const blob = await downloadMonthlySummaryPdf(bounds);
+      triggerBlobDownload(blob, `shiftkit-${yearMonthKey(selectedMonth)}.pdf`);
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : 'Kunde inte skapa PDF');
+    } finally {
+      setIsPdfPending(false);
+    }
+  }
 
   return (
     <AppShell userName={userName}>
@@ -71,6 +92,29 @@ export default function MonthlySummaryPage() {
                 <Link href="/summary/compare">Jämför månader</Link>
               </Button>
             ) : null}
+            {user.isPremium ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isPdfPending}
+                onClick={handleDownloadPdf}
+              >
+                {isPdfPending ? 'Skapar PDF…' : 'Ladda ner PDF'}
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link href="/premium">PDF (Premium)</Link>
+              </Button>
+            )}
+            {user.isPremium ? (
+              <Button asChild variant="outline">
+                <Link href="/salary-goal">Redigera lönemål</Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link href="/premium">Lönemål (Premium)</Link>
+              </Button>
+            )}
             <Button asChild variant="outline">
               <Link href="/tax-settings">Skatteinställningar</Link>
             </Button>
@@ -79,15 +123,13 @@ export default function MonthlySummaryPage() {
             </Button>
           </div>
         </div>
-
         {error ? <PageError message={error} variant="inline" /> : null}
-
+        {pdfError ? <PageError message={pdfError} variant="inline" /> : null}
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
           {stats.map((stat) => (
             <StateCard key={stat.label} {...stat} />
           ))}
         </div>
-
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHeader>
@@ -148,7 +190,6 @@ export default function MonthlySummaryPage() {
               </Table>
             </CardContent>
           </Card>
-
           <Card className="lg:row-span-2">
             <CardHeader>
               <CardTitle>Lönemål (netto)</CardTitle>
@@ -162,9 +203,17 @@ export default function MonthlySummaryPage() {
               <p className="text-center text-sm text-muted-foreground">
                 Progress räknas mot nettovinsten denna månad
               </p>
+              {user.isPremium ? (
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/salary-goal">Ändra mål</Link>
+                </Button>
+              ) : (
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/premium">Sätt mål (Premium)</Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
-
           {user.isPremium && (summary?.sickLeave?.length ?? 0) > 0 ? (
             <Card className="lg:col-span-2">
               <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">

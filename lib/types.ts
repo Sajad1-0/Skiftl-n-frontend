@@ -205,3 +205,7 @@ export interface UpsertTaxSettingsBody {
   columnNumber?: number;
   dayType?: '30B' | '30%';
 }
+
+export interface SalaryGoal {
+  monthlySalaryGoalOre: number | null;
+}
