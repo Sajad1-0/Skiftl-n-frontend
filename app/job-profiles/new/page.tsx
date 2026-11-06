@@ -12,7 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { createJobProfile, listCollectiveAgreements, listJobProfiles } from '@/lib/api';
+import { useJobProfiles } from '@/hooks/use-job-profiles';
+import { createJobProfile, listCollectiveAgreements } from '@/lib/api';
 import { kronorToOre } from '@/lib/money';
 import type { PublicAgreement } from '@/lib/types';
 
@@ -25,39 +26,28 @@ const initialState: FormState = { error: null };
 export default function NewJobProfilePage() {
   const router = useRouter();
   const { user, userName, isLoading: authLoading } = useAuthUser();
+  const { profiles } = useJobProfiles({ enabled: !!user, softFail: true });
   const [agreements, setAgreements] = useState<PublicAgreement[]>([]);
-  const [blockedReason, setBlockedReason] = useState<string | null>(null);
+
+  const activeCount = profiles.filter((p) => p.archivedAt == null).length;
+  const cap = user?.isPremium ? 5 : 1;
+  const blockedReason =
+    user && activeCount >= cap
+      ? user.isPremium
+        ? 'Du har redan 5 aktiva profiler. Arkivera en först.'
+        : 'Gratisplan tillåter en profil. Uppgradera till Premium för fler.'
+      : null;
 
   useEffect(() => {
     if (!user) return;
 
     let cancelled = false;
-
     void listCollectiveAgreements()
       .then((data) => {
         if (!cancelled) setAgreements(data);
       })
       .catch(() => {
         if (!cancelled) setAgreements([]);
-      });
-
-    void listJobProfiles()
-      .then((profiles) => {
-        if (cancelled) return;
-        const active = profiles.filter((p) => p.archivedAt == null).length;
-        const cap = user.isPremium ? 5 : 1;
-        if (active >= cap) {
-          setBlockedReason(
-            user.isPremium
-              ? 'Du har redan 5 aktiva profiler. Arkivera en först.'
-              : 'Gratisplan tillåter en profil. Uppgradera till Premium för fler.',
-          );
-        } else {
-          setBlockedReason(null);
-        }
-      })
-      .catch(() => {
-        /* create-form fungerar ändå; backend gate */
       });
 
     return () => {

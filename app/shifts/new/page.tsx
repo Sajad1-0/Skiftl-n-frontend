@@ -8,8 +8,7 @@ import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import BreakIntervalsEditor, {
-  draftsToBreakIntervals,
-  hasIncompleteBreakDrafts,
+  prepareBreakIntervals,
   type BreakIntervalDraft,
 } from '@/components/shifts/break-intervals-editor';
 import { Button } from '@/components/ui/button';
@@ -17,21 +16,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { createShift, listJobProfiles } from '@/lib/api';
-import { syncEndAtFromStart } from '@/lib/shift-datetime';
-import type { PublicJobProfile } from '@/lib/types';
-
-/** datetime-local value → ISO UTC for API */
-function localInputToIso(value: string): string {
-  return new Date(value).toISOString();
-}
+import { useJobProfiles } from '@/hooks/use-job-profiles';
+import { createShift } from '@/lib/api';
+import { localInputToIso, syncEndAtFromStart } from '@/lib/shift-datetime';
 
 export default function NewShiftPage() {
   const router = useRouter();
   const { user, userName, isLoading: authLoading } = useAuthUser();
-  const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
-  const [profilesLoading, setProfilesLoading] = useState(true);
-  const [profilesError, setProfilesError] = useState<string | null>(null);
+  const {
+    profiles,
+    isLoading: profilesLoading,
+    error: profilesError,
+    primaryId,
+  } = useJobProfiles({ enabled: !!user });
   const [jobProfileId, setJobProfileId] = useState('');
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
@@ -42,32 +39,9 @@ export default function NewShiftPage() {
   const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-
-    let cancelled = false;
-
-    async function loadProfiles() {
-      try {
-        const list = await listJobProfiles();
-        if (cancelled) return;
-        setProfiles(list);
-        const primary = list.find((p) => p.isPrimary)?.id ?? list[0]?.id ?? '';
-        setJobProfileId(primary);
-        setProfilesError(null);
-      } catch (err: unknown) {
-        if (!cancelled) {
-          setProfilesError(err instanceof Error ? err.message : 'Kunde inte ladda jobbprofiler');
-        }
-      } finally {
-        if (!cancelled) setProfilesLoading(false);
-      }
-    }
-
-    void loadProfiles();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (primaryId && !jobProfileId) setJobProfileId(primaryId);
+  }, [primaryId, jobProfileId]);
 
   const isPremium = user?.isPremium === true;
 
@@ -94,29 +68,16 @@ export default function NewShiftPage() {
     setIsPending(true);
     try {
       if (isPremium) {
-        if (hasIncompleteBreakDrafts(intervals)) {
-          setError('Fyll i både start och slut för varje rast, eller ta bort raden');
+        const prepared = prepareBreakIntervals(intervals, startAt, endAt);
+        if ('error' in prepared) {
+          setError(prepared.error);
           return;
-        }
-        const breakIntervals = draftsToBreakIntervals(intervals, startAt, endAt);
-        for (const br of breakIntervals) {
-          if (new Date(br.endAt).getTime() <= new Date(br.startAt).getTime()) {
-            setError('Rast: slut måste vara efter start');
-            return;
-          }
-          if (
-            new Date(br.startAt).getTime() < new Date(startIso).getTime() ||
-            new Date(br.endAt).getTime() > new Date(endIso).getTime()
-          ) {
-            setError('Rastintervall måste ligga inom passets start och slut');
-            return;
-          }
         }
         await createShift({
           jobProfileId,
           startAt: startIso,
           endAt: endIso,
-          breakIntervals,
+          breakIntervals: prepared.breakIntervals,
           notes: notes.trim().length > 0 ? notes.trim() : undefined,
         });
       } else {

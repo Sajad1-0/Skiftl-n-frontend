@@ -19,60 +19,48 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuthUser } from '@/hooks/use-auth-user';
+import { useJobProfiles } from '@/hooks/use-job-profiles';
 import {
   archiveJobProfile,
   deleteJobProfile,
-  listJobProfiles,
   listCollectiveAgreements,
   unarchiveJobProfile,
 } from '@/lib/api';
 import { formatKronor } from '@/lib/money';
-import type { PublicAgreement, PublicJobProfile } from '@/lib/types';
+import type { PublicAgreement } from '@/lib/types';
 
 const FREE_CAP = 1;
 const PREMIUM_CAP = 5;
 
 export default function JobProfilesPage() {
   const { user, userName, isLoading: authLoading, error: authError } = useAuthUser();
-  const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
+  const isPremium = user?.isPremium === true;
+  const {
+    profiles,
+    setProfiles,
+    isLoading: profilesLoading,
+    error: profilesError,
+    reload,
+  } = useJobProfiles({
+    enabled: !!user,
+    includeArchived: isPremium,
+  });
   const [error, setError] = useState<string | null>(null);
-  const [profilesLoading, setProfilesLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [agreements, setAgreements] = useState<PublicAgreement[]>([]);
-
-  const isPremium = user?.isPremium === true;
 
   useEffect(() => {
     if (!user) return;
 
     let cancelled = false;
-
-    async function load() {
-      try {
-        const profileData = await listJobProfiles({
-          includeArchived: user?.isPremium === true,
-        });
-        if (!cancelled) {
-          setProfiles(profileData);
-          setError(null);
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : 'Kunde inte ladda profiler');
-        }
-      } finally {
-        if (!cancelled) setProfilesLoading(false);
-      }
-
-      try {
-        const agreementData = await listCollectiveAgreements();
-        if (!cancelled) setAgreements(agreementData);
-      } catch {
+    void listCollectiveAgreements()
+      .then((data) => {
+        if (!cancelled) setAgreements(data);
+      })
+      .catch(() => {
         if (!cancelled) setAgreements([]);
-      }
-    }
+      });
 
-    void load();
     return () => {
       cancelled = true;
     };
@@ -86,10 +74,6 @@ export default function JobProfilesPage() {
   const cap = isPremium ? PREMIUM_CAP : FREE_CAP;
   const canCreate = activeCount < cap;
   const canArchive = activeCount > 1;
-
-  function reloadProfiles() {
-    return listJobProfiles({ includeArchived: isPremium }).then(setProfiles);
-  }
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -107,7 +91,7 @@ export default function JobProfilesPage() {
     startTransition(async () => {
       try {
         await archiveJobProfile(id);
-        await reloadProfiles();
+        await reload();
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Kunde inte arkivera profil');
@@ -119,7 +103,7 @@ export default function JobProfilesPage() {
     startTransition(async () => {
       try {
         await unarchiveJobProfile(id);
-        await reloadProfiles();
+        await reload();
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Kunde inte återställa profil');
@@ -128,7 +112,7 @@ export default function JobProfilesPage() {
   }
 
   const isLoading = authLoading || (!!user && profilesLoading);
-  const displayError = error ?? authError;
+  const displayError = error ?? profilesError ?? authError;
 
   if (isLoading) {
     return <PageLoading label="Laddar jobbprofiler…" userName={userName} />;

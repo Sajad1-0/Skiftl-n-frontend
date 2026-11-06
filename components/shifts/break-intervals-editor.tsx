@@ -4,6 +4,8 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { isoToTimeHm } from '@/lib/shift-datetime';
+import type { BreakIntervalsDto } from '@/lib/types';
 
 /** Rast i UI: bara klockslag (HH:mm). Datum sätts från passet vid sparning. */
 export interface BreakIntervalDraft {
@@ -142,4 +144,48 @@ export function draftsToBreakIntervals(
         endAt: endAt.toISOString(),
       };
     });
+}
+
+/** API-intervall → utkast med bara klockslag (för redigering). */
+export function breakIntervalsToDrafts(
+  intervals: BreakIntervalsDto[] | undefined,
+): BreakIntervalDraft[] {
+  if (!intervals || intervals.length === 0) return [];
+  return intervals.map((i) => ({
+    key: crypto.randomUUID(),
+    startTime: isoToTimeHm(i.startAt),
+    endTime: isoToTimeHm(i.endAt),
+  }));
+}
+
+/**
+ * Validera + bygg ISO-intervall för API.
+ * `shiftStartLocal` / `shiftEndLocal` = datetime-local från formuläret.
+ */
+export function prepareBreakIntervals(
+  drafts: BreakIntervalDraft[],
+  shiftStartLocal: string,
+  shiftEndLocal: string,
+): { breakIntervals: Array<{ startAt: string; endAt: string }> } | { error: string } {
+  if (hasIncompleteBreakDrafts(drafts)) {
+    return { error: 'Fyll i både start och slut för varje rast, eller ta bort raden' };
+  }
+
+  const startIso = new Date(shiftStartLocal).toISOString();
+  const endIso = new Date(shiftEndLocal).toISOString();
+  const breakIntervals = draftsToBreakIntervals(drafts, shiftStartLocal, shiftEndLocal);
+
+  for (const br of breakIntervals) {
+    if (new Date(br.endAt).getTime() <= new Date(br.startAt).getTime()) {
+      return { error: 'Rast: slut måste vara efter start' };
+    }
+    if (
+      new Date(br.startAt).getTime() < new Date(startIso).getTime() ||
+      new Date(br.endAt).getTime() > new Date(endIso).getTime()
+    ) {
+      return { error: 'Rastintervall måste ligga inom passets start och slut' };
+    }
+  }
+
+  return { breakIntervals };
 }

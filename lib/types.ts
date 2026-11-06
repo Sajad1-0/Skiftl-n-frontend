@@ -78,6 +78,15 @@ export interface CreateShiftBody {
   notes?: string;
 }
 
+export interface UpdateShiftBody {
+  jobProfileId?: string;
+  startAt?: string;
+  endAt?: string;
+  breakMinutes?: number;
+  breakIntervals?: BreakIntervalsDto[];
+  notes?: string | null;
+}
+
 export interface BulkCreateShiftsBody {
   jobProfileId: string;
   shifts: Array<{

@@ -83,9 +83,9 @@ export default function MonthlySummaryPage() {
               {user.isPremium ? '' : ' · Gratis: schablon + bara innevarande månad'}
             </p>
           </div>
-          <div className="flex flex-wrap items-end gap-2 self-start">
+          <div className="flex flex-wrap items-center gap-2 self-start">
             {user.isPremium ? (
-              <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
+              <MonthPicker compact value={selectedMonth} onChange={setSelectedMonth} />
             ) : null}
             {user.isPremium ? (
               <Button asChild variant="outline">

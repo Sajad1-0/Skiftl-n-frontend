@@ -1,16 +1,14 @@
 'use client';
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import { useRouter } from 'next/navigation';
-import { getCurrentUser, listShifts } from '@/lib/api';
-import { clearToken, getToken } from '@/lib/auth-storage';
+import { listShifts } from '@/lib/api';
 import { currentYearMonth, monthBoundsFor, type YearMonth } from '@/lib/month-bounds';
 import { summarizeShifts, type ShiftMonthStats } from '@/lib/shift-stats';
-import { formatUserName } from '@/hooks/use-auth-user';
-import type { PublicShift, PublicUser } from '@/lib/types';
+import { useAuthUser } from '@/hooks/use-auth-user';
+import type { PublicShift } from '@/lib/types';
 
 export interface UseMonthShiftStatsResult {
-  user: PublicUser | null;
+  user: ReturnType<typeof useAuthUser>['user'];
   userName: string | undefined;
   shifts: PublicShift[];
   stats: ShiftMonthStats;
@@ -20,7 +18,6 @@ export interface UseMonthShiftStatsResult {
   setSelectedMonth: Dispatch<SetStateAction<YearMonth>>;
   setShifts: Dispatch<SetStateAction<PublicShift[]>>;
   setError: Dispatch<SetStateAction<string | null>>;
-  /** Ladda om månadens pass (t.ex. efter delete så est. netto uppdateras). */
   reloadShifts: () => Promise<void>;
 }
 
@@ -29,14 +26,14 @@ function monthKey(month: YearMonth): string {
 }
 
 export function useMonthShiftStats(): UseMonthShiftStatsResult {
-  const router = useRouter();
-  const [user, setUser] = useState<PublicUser | null>(null);
+  const { user, userName, isLoading: authLoading, error: authError } = useAuthUser();
   const [shifts, setShifts] = useState<PublicShift[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<YearMonth>(currentYearMonth);
   const loadKey = monthKey(selectedMonth);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
-  const isLoading = loadedKey !== loadKey;
+  const dataLoading = !!user && loadedKey !== loadKey;
+  const isLoading = authLoading || dataLoading;
   const visibleShifts = loadedKey === loadKey ? shifts : [];
 
   async function reloadShifts(): Promise<void> {
@@ -48,52 +45,34 @@ export function useMonthShiftStats(): UseMonthShiftStatsResult {
   }
 
   useEffect(() => {
+    if (!user) return;
+
     let cancelled = false;
+    const month = user.isPremium ? selectedMonth : currentYearMonth();
+
+    if (
+      !user.isPremium &&
+      (selectedMonth.year !== month.year || selectedMonth.month !== month.month)
+    ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedMonth(month);
+      return;
+    }
 
     async function load() {
-      if (!getToken()) {
-        router.replace('/login');
-        if (!cancelled) setLoadedKey(loadKey);
-        return;
-      }
-
       try {
-        const me = await getCurrentUser();
-        if (cancelled) return;
-        setUser(me);
-
-        // Free: Lås till innevarande månad
-        const month = me.isPremium ? selectedMonth : currentYearMonth();
-        if (
-          !me.isPremium &&
-          (selectedMonth.year !== month.year || selectedMonth.month !== month.month)
-        ) {
-          setSelectedMonth(month);
-          return;
+        const monthShifts = await listShifts(monthBoundsFor(month));
+        if (!cancelled) {
+          setShifts(monthShifts);
+          setError(null);
+          setLoadedKey(monthKey(month));
         }
-
-        try {
-          const monthShifts = await listShifts(monthBoundsFor(month));
-          if (!cancelled) {
-            setShifts(monthShifts);
-            setError(null);
-            setLoadedKey(monthKey(month));
-          }
-        } catch (shiftError) {
-          if (!cancelled) {
-            setShifts([]);
-            setError(shiftError instanceof Error ? shiftError.message : 'Kunde inte ladda pass');
-            setLoadedKey(monthKey(month));
-          }
-        }
-      } catch (authError) {
-        clearToken();
+      } catch (shiftError) {
         if (!cancelled) {
           setShifts([]);
-          setError(authError instanceof Error ? authError.message : 'Kunde inte ladda data');
-          setLoadedKey(loadKey);
+          setError(shiftError instanceof Error ? shiftError.message : 'Kunde inte ladda pass');
+          setLoadedKey(monthKey(month));
         }
-        router.replace('/login');
       }
     }
 
@@ -101,17 +80,15 @@ export function useMonthShiftStats(): UseMonthShiftStatsResult {
     return () => {
       cancelled = true;
     };
-  }, [router, selectedMonth, loadKey]);
-
-  const stats = summarizeShifts(visibleShifts, user?.monthlySalaryGoal);
+  }, [user, selectedMonth, loadKey]);
 
   return {
     user,
-    userName: user ? formatUserName(user) : undefined,
+    userName,
     shifts: visibleShifts,
-    stats,
+    stats: summarizeShifts(visibleShifts, user?.monthlySalaryGoal),
     isLoading,
-    error,
+    error: error ?? authError,
     selectedMonth,
     setSelectedMonth,
     setShifts,

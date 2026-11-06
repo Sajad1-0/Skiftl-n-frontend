@@ -16,6 +16,7 @@ import type {
   RegisterBody,
   SalaryGoal,
   UpdateJobProfileBody,
+  UpdateShiftBody,
   PublicTaxSettings,
   UpsertTaxSettingsBody,
 } from './types';
@@ -249,6 +250,37 @@ export async function createBulkShifts(body: BulkCreateShiftsBody): Promise<Publ
 
   if (!response.ok || !json.success) {
     throw new Error(!json.success ? json.message : 'Kunde inte skapa passen');
+  }
+
+  return json.data;
+}
+
+export async function getShift(id: string): Promise<PublicShift> {
+  const response = await fetch(`${API_URL}/shifts/${id}`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicShift> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte hämta passet');
+  }
+
+  return json.data;
+}
+
+export async function updateShift(id: string, body: UpdateShiftBody): Promise<PublicShift> {
+  const response = await fetch(`${API_URL}/shifts/${id}`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  const json = await parseJson<ApiSuccess<PublicShift> | ApiError>(response);
+
+  if (!response.ok || !json.success) {
+    throw new Error(!json.success ? json.message : 'Kunde inte uppdatera passet');
   }
 
   return json.data;

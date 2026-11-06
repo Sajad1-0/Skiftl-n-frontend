@@ -19,7 +19,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { deleteSickLeave, listJobProfiles, listSickLeave } from '@/lib/api';
+import { profileNameById, useJobProfiles } from '@/hooks/use-job-profiles';
+import { deleteSickLeave, listSickLeave } from '@/lib/api';
 import {
   currentYearMonth,
   formatYearMonthSv,
@@ -27,13 +28,13 @@ import {
   type YearMonth,
 } from '@/lib/month-bounds';
 import { formatKronor } from '@/lib/money';
-import type { PublicJobProfile, PublicSickLeave } from '@/lib/types';
+import type { PublicSickLeave } from '@/lib/types';
 
 export default function SickLeavePage() {
   const { user, userName, isLoading: authLoading } = useAuthUser();
+  const { profiles } = useJobProfiles({ enabled: !!user?.isPremium, softFail: true });
   const [selectedMonth, setSelectedMonth] = useState<YearMonth>(currentYearMonth);
   const [periods, setPeriods] = useState<PublicSickLeave[]>([]);
-  const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -50,11 +51,9 @@ export default function SickLeavePage() {
 
     async function load() {
       try {
-        const bounds = monthBoundsFor(selectedMonth);
-        const [list, profileList] = await Promise.all([listSickLeave(bounds), listJobProfiles()]);
+        const list = await listSickLeave(monthBoundsFor(selectedMonth));
         if (!cancelled) {
           setPeriods(list);
-          setProfiles(profileList);
           setError(null);
           setLoadedKey(loadKey);
         }
@@ -70,10 +69,6 @@ export default function SickLeavePage() {
       cancelled = true;
     };
   }, [loadKey, selectedMonth]);
-
-  function profileName(id: string): string {
-    return profiles.find((p) => p.id === id)?.name ?? 'Okänd profil';
-  }
 
   function handleDelete(id: string) {
     if (!window.confirm('Ta bort denna sjukperiod?')) return;
@@ -127,8 +122,8 @@ export default function SickLeavePage() {
               {formatYearMonthSv(selectedMonth)}
             </p>
           </div>
-          <div className="flex flex-wrap items-end gap-2">
-            <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
+          <div className="flex flex-wrap items-center gap-2">
+            <MonthPicker compact value={selectedMonth} onChange={setSelectedMonth} />
             <Button asChild className="gap-1.5">
               <Link href="/sick-leave/new">
                 <Plus className="size-4" />
@@ -174,7 +169,7 @@ export default function SickLeavePage() {
                       <TableCell className="tabular-nums">
                         {p.startDate} – {p.endDate}
                       </TableCell>
-                      <TableCell>{profileName(p.jobProfileId)}</TableCell>
+                      <TableCell>{profileNameById(profiles, p.jobProfileId)}</TableCell>
                       <TableCell className="tabular-nums">{p.karensdag ?? '—'}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {formatKronor(p.totalSickPayOre)}

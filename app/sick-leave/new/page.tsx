@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState } from 'react';
 import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
@@ -12,8 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { createSickLeave, listJobProfiles } from '@/lib/api';
-import type { PublicJobProfile } from '@/lib/types';
+import { useJobProfiles } from '@/hooks/use-job-profiles';
+import { createSickLeave } from '@/lib/api';
 
 interface FormState {
   error: string | null;
@@ -24,38 +24,12 @@ const initialState: FormState = { error: null };
 export default function NewSickLeavePage() {
   const router = useRouter();
   const { user, userName, isLoading: authLoading } = useAuthUser();
-  const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
-  const [profilesLoading, setProfilesLoading] = useState(true);
-  const [profilesError, setProfilesError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user?.isPremium) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setProfilesLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    void listJobProfiles()
-      .then((list) => {
-        if (!cancelled) {
-          setProfiles(list);
-          setProfilesError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setProfilesError(err instanceof Error ? err.message : 'Kunde inte ladda profiler');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setProfilesLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
+  const {
+    profiles,
+    isLoading: profilesLoading,
+    error: profilesError,
+    primaryId,
+  } = useJobProfiles({ enabled: !!user?.isPremium });
 
   const [state, formAction, isPending] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
@@ -85,7 +59,6 @@ export default function NewSickLeavePage() {
     initialState,
   );
 
-  const primaryId = profiles.find((p) => p.isPrimary)?.id ?? profiles[0]?.id;
   const isLoading = authLoading || (!!user?.isPremium && profilesLoading);
 
   if (isLoading) return <PageLoading label="Laddar..." userName={userName} />;

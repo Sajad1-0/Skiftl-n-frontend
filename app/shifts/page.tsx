@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useTransition, useState, useEffect } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { useTransition } from 'react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
@@ -18,8 +18,8 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { formatKronor } from '@/lib/money';
-import { listJobProfiles, deleteShift } from '@/lib/api';
-import type { PublicJobProfile } from '@/lib/types';
+import { deleteShift } from '@/lib/api';
+import { profileNameById, useJobProfiles } from '@/hooks/use-job-profiles';
 import { useMonthShiftStats } from '@/hooks/use-month-shift-stats';
 import { MonthPicker } from '@/components/history/month-picker';
 import { formatYearMonthSv } from '@/lib/month-bounds';
@@ -45,22 +45,8 @@ export default function ShiftPage() {
     selectedMonth,
     setSelectedMonth,
   } = useMonthShiftStats();
-  const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
+  const { profiles } = useJobProfiles({ softFail: true });
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    let cancelled = false;
-    void listJobProfiles()
-      .then((data) => {
-        if (!cancelled) setProfiles(data);
-      })
-      .catch(() => {
-        /* profilnamn faller tillbaka till "Okänd profil" */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -83,8 +69,6 @@ export default function ShiftPage() {
     });
   }
 
-  const profileName = (id: string) => profiles.find((p) => p.id === id)?.name ?? 'Okänd profil';
-
   if (isLoading) {
     return <PageLoading label="Laddar pass…" userName={userName} />;
   }
@@ -101,9 +85,9 @@ export default function ShiftPage() {
               {stats.totalObOre > 0 ? ` · ${formatKronor(stats.totalObOre)} OB` : ''}
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
             {user?.isPremium ? (
-              <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
+              <MonthPicker compact value={selectedMonth} onChange={setSelectedMonth} />
             ) : (
               <p className="max-w-xs text-xs text-muted-foreground">
                 Bara innevarande månad.{' '}
@@ -112,7 +96,7 @@ export default function ShiftPage() {
                 </Link>
               </p>
             )}
-            <div className="flex flex-wrap gap-2 self-start">
+            <div className="flex flex-wrap items-center gap-2">
               <Button asChild className="gap-1.5">
                 <Link href="/shifts/new">
                   <Plus className="size-4" />
@@ -151,7 +135,7 @@ export default function ShiftPage() {
                   <TableHead className="text-right">OB</TableHead>
                   <TableHead className="text-right">Brutto</TableHead>
                   <TableHead className="text-right">Est. netto</TableHead>
-                  <TableHead className="w-12" />
+                  <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -169,7 +153,7 @@ export default function ShiftPage() {
                     <TableRow key={shift.id}>
                       <TableCell>{formatWhen(shift.startAt)}</TableCell>
                       <TableCell>{formatWhen(shift.endAt)}</TableCell>
-                      <TableCell>{profileName(shift.jobProfileId)}</TableCell>
+                      <TableCell>{profileNameById(profiles, shift.jobProfileId)}</TableCell>
                       <TableCell className="text-right tabular-nums">
                         {(shift.workedMinutes / 60).toFixed(1)} h
                       </TableCell>
@@ -183,16 +167,23 @@ export default function ShiftPage() {
                         {shift.estimatedNetOre != null ? formatKronor(shift.estimatedNetOre) : '—'}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={isPending}
-                          onClick={() => handleDelete(shift.id)}
-                          aria-label="Ta bort pass"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-0.5">
+                          <Button type="button" variant="ghost" size="icon" asChild>
+                            <Link href={`/shifts/${shift.id}/edit`} aria-label="Redigera pass">
+                              <Pencil className="size-4" />
+                            </Link>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            disabled={isPending}
+                            onClick={() => handleDelete(shift.id)}
+                            aria-label="Ta bort pass"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

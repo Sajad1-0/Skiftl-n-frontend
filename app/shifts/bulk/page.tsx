@@ -9,8 +9,7 @@ import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import BreakIntervalsEditor, {
-  draftsToBreakIntervals,
-  hasIncompleteBreakDrafts,
+  prepareBreakIntervals,
   type BreakIntervalDraft,
 } from '@/components/shifts/break-intervals-editor';
 import { Button } from '@/components/ui/button';
@@ -18,9 +17,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { createBulkShifts, listJobProfiles } from '@/lib/api';
-import { syncEndAtFromStart } from '@/lib/shift-datetime';
-import type { BulkCreateShiftsBody, PublicJobProfile } from '@/lib/types';
+import { useJobProfiles } from '@/hooks/use-job-profiles';
+import { createBulkShifts } from '@/lib/api';
+import { localInputToIso, syncEndAtFromStart } from '@/lib/shift-datetime';
+import type { BulkCreateShiftsBody } from '@/lib/types';
 
 const MAX_ROWS = 10;
 
@@ -42,47 +42,24 @@ function emptyRow(): BulkRow {
   };
 }
 
-function localInputToIso(value: string): string {
-  return new Date(value).toISOString();
-}
-
 export default function BulkShiftsPage() {
   const router = useRouter();
   const { user, userName, isLoading: authLoading } = useAuthUser();
-  const [profiles, setProfiles] = useState<PublicJobProfile[]>([]);
-  const [profilesLoading, setProfilesLoading] = useState(true);
-  const [profilesError, setProfilesError] = useState<string | null>(null);
+  const {
+    profiles,
+    isLoading: profilesLoading,
+    error: profilesError,
+    primaryId,
+  } = useJobProfiles({ enabled: !!user?.isPremium });
   const [jobProfileId, setJobProfileId] = useState('');
   const [rows, setRows] = useState<BulkRow[]>([emptyRow()]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-
-    async function loadProfiles() {
-      try {
-        const list = await listJobProfiles();
-        if (cancelled) return;
-        setProfiles(list);
-        const primary = list.find((p) => p.isPrimary)?.id ?? list[0]?.id ?? '';
-        setJobProfileId(primary);
-        setProfilesError(null);
-      } catch (err: unknown) {
-        if (!cancelled) {
-          setProfilesError(err instanceof Error ? err.message : 'Kunde inte ladda jobbprofiler');
-        }
-      } finally {
-        if (!cancelled) setProfilesLoading(false);
-      }
-    }
-
-    void loadProfiles();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (primaryId && !jobProfileId) setJobProfileId(primaryId);
+  }, [primaryId, jobProfileId]);
 
   function updateRow(key: string, patch: Partial<BulkRow>) {
     setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
@@ -136,30 +113,17 @@ export default function BulkShiftsPage() {
         return;
       }
 
-      if (hasIncompleteBreakDrafts(row.intervals)) {
-        setError('Fyll i både start och slut för varje rast, eller ta bort raden');
+      const prepared = prepareBreakIntervals(row.intervals, row.startAt, row.endAt);
+      if ('error' in prepared) {
+        setError(prepared.error);
         return;
-      }
-      const breakIntervals = draftsToBreakIntervals(row.intervals, row.startAt, row.endAt);
-      for (const br of breakIntervals) {
-        if (new Date(br.endAt).getTime() <= new Date(br.startAt).getTime()) {
-          setError('Rast: slut måste vara efter start på varje rad');
-          return;
-        }
-        if (
-          new Date(br.startAt).getTime() < new Date(startAt).getTime() ||
-          new Date(br.endAt).getTime() > new Date(endAt).getTime()
-        ) {
-          setError('Rastintervall måste ligga inom passets start och slut');
-          return;
-        }
       }
 
       const notes = row.notes.trim();
       shifts.push({
         startAt,
         endAt,
-        breakIntervals,
+        breakIntervals: prepared.breakIntervals,
         ...(notes.length > 0 ? { notes } : {}),
       });
     }
@@ -175,7 +139,7 @@ export default function BulkShiftsPage() {
     }
   }
 
-  const isLoading = authLoading || (!!user && profilesLoading);
+  const isLoading = authLoading || (!!user?.isPremium && profilesLoading);
 
   if (isLoading) return <PageLoading label="laddar..." userName={userName} />;
 
