@@ -5,10 +5,9 @@ import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CircularProgress } from '@/components/ui/circular-progress';
+import { SalaryGoalCard } from '@/components/salary-goal/salary-goal-card';
 import {
   Table,
   TableBody,
@@ -42,7 +41,6 @@ export default function MonthlySummaryPage() {
 
   const hours = summary ? summary.workedMinutes / 60 : 0;
   const hoursProgress = Math.min(100, Math.round((hours / MONTHLY_HOUR_TARGET) * 100));
-  const goalProgress = summary?.goalProgressPercent ?? 0;
   const taxModeLabel = summary?.taxMode === 'table' ? 'Skattetabell' : 'Schablon (profil)';
 
   const stats = [
@@ -190,30 +188,14 @@ export default function MonthlySummaryPage() {
               </Table>
             </CardContent>
           </Card>
-          <Card className="lg:row-span-2">
-            <CardHeader>
-              <CardTitle>Lönemål (netto)</CardTitle>
-              <CardDescription>
-                {summary?.goalOre != null ? formatKronor(summary.goalOre) : 'Inget mål satt ännu'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-3 pb-6">
-              <CircularProgress value={goalProgress} label="av mål" />
-              <Badge variant="secondary">{user.isPremium ? 'Premium' : 'Standard'}</Badge>
-              <p className="text-center text-sm text-muted-foreground">
-                Progress räknas mot nettovinsten denna månad
-              </p>
-              {user.isPremium ? (
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/salary-goal">Ändra mål</Link>
-                </Button>
-              ) : (
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/premium">Sätt mål (Premium)</Link>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          <SalaryGoalCard
+            className="lg:row-span-2"
+            summary={summary}
+            isPremium={user.isPremium}
+            showPremiumBadge
+            periodLabel={formatYearMonthSv(selectedMonth)}
+            footnote="Uppskattning — OB, skattetabell och blandade profiler kan påverka utfallet"
+          />
           {user.isPremium && (summary?.sickLeave?.length ?? 0) > 0 ? (
             <Card className="lg:col-span-2">
               <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
