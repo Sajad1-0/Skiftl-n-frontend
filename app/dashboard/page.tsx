@@ -9,7 +9,7 @@ import { FadeIn } from '@/components/motion/fade-in';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CircularProgress } from '@/components/ui/circular-progress';
+import { SalaryGoalCard } from '@/components/salary-goal/salary-goal-card';
 import {
   Table,
   TableBody,
@@ -36,9 +36,7 @@ export default function DashboardPage() {
   }
 
   const displayName = user.firstName;
-  const goalOre = summary?.goalOre ?? user.monthlySalaryGoal;
   const hoursProgress = Math.min(100, Math.round((stats.hours / MONTHLY_HOUR_TARGET) * 100));
-  const goalProgress = summary?.goalProgressPercent ?? 0;
 
   const recentShifts = [...shifts]
     .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
@@ -129,30 +127,16 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Lönemål (netto)</CardTitle>
-              <CardDescription>
-                {goalOre != null ? formatKronor(goalOre) : 'Inget mål satt ännu'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-3 pb-6">
-              <CircularProgress value={goalProgress} label="av mål" />
-              <p className="text-sm text-muted-foreground">Beräknad lön (netto)</p>
-              <p className="text-2xl font-semibold tabular-nums">
-                {summary ? formatKronor(summary.netOre) : '—'}
-              </p>
-              {user.isPremium ? (
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/salary-goal">Ändra mål</Link>
-                </Button>
-              ) : (
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/premium">Sätt mål (Premium)</Link>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          {!summaryError ? (
+            <SalaryGoalCard
+              summary={summary}
+              isPremium={user.isPremium}
+              showNetAmount
+              periodLabel="denna månad"
+              footnote="Uppskattning utifrån din nettointäkt/timme denna månad (eller jobbprofil)"
+            />
+          ) : null}
+
         </div>
         <FadeIn delayMs={80}>
           <Card>

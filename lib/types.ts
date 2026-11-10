@@ -165,6 +165,9 @@ export interface MonthlySummary {
   taxMode: TaxMode;
   goalOre: number | null;
   goalProgressPercent: number;
+  goalRemainingOre: number | null;
+  hoursToGoalEstimate: number | null;
+  estimatedNetOrePerHour: number | null;
   byJobProfile: ProfileBreakDown[];
   sickPayOre: number;
   sickLeave: SickLeaveSummaryRow[];
