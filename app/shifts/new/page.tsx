@@ -19,6 +19,7 @@ import { useAuthUser } from '@/hooks/use-auth-user';
 import { useJobProfiles } from '@/hooks/use-job-profiles';
 import { createShift } from '@/lib/api';
 import { localInputToIso, syncEndAtFromStart } from '@/lib/shift-datetime';
+import PremiumUpgradeDialog from '@/components/premium/premium-upgrade-dialog';
 
 export default function NewShiftPage() {
   const router = useRouter();
@@ -197,12 +198,17 @@ export default function NewShiftPage() {
                       onChange={(e) => setBreakMinutes(e.target.value)}
                       className="h-11"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Premium: ange exakta rasttider istället.{' '}
-                      <Link href="/premium" className="underline underline-offset-4">
-                        Uppgradera
-                      </Link>
-                    </p>
+                    <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                      <span>Premium: ange exakta rasttider istället.</span>
+                      <PremiumUpgradeDialog
+                        featureId="breaks"
+                        triggerLabel="Uppgradera"
+                        triggerVariant="link"
+                        triggerSize="sm"
+                        triggerClassName="h-auto p-0 text-xs underline underline-offset-4"
+                      />
+                    </div>
+
                   </div>
                 )}
 

@@ -23,6 +23,7 @@ import { profileNameById, useJobProfiles } from '@/hooks/use-job-profiles';
 import { useMonthShiftStats } from '@/hooks/use-month-shift-stats';
 import { MonthPicker } from '@/components/history/month-picker';
 import { formatYearMonthSv } from '@/lib/month-bounds';
+import PremiumUpgradeDialog from '@/components/premium/premium-upgrade-dialog';
 
 function formatWhen(iso: string): string {
   return new Intl.DateTimeFormat('sv-SE', {
@@ -89,12 +90,16 @@ export default function ShiftPage() {
             {user?.isPremium ? (
               <MonthPicker compact value={selectedMonth} onChange={setSelectedMonth} />
             ) : (
-              <p className="max-w-xs text-xs text-muted-foreground">
+              <div className="max-w-xs text-xs text-muted-foreground">
                 Bara innevarande månad.{' '}
-                <Link href="/premium" className="underline underline-offset-4">
-                  Premium: 6 månader
-                </Link>
-              </p>
+                <PremiumUpgradeDialog
+                  featureId="history"
+                  triggerVariant="link"
+                  triggerSize="sm"
+                  triggerLabel="Premium: 6 månader"
+                  triggerClassName="h-auto p-0 text-xs"
+                />
+              </div>
             )}
             <div className="flex flex-wrap items-center gap-2">
               <Button asChild className="gap-1.5">
@@ -108,9 +113,7 @@ export default function ShiftPage() {
                   <Link href="/shifts/bulk">Bulk-logg</Link>
                 </Button>
               ) : (
-                <Button asChild variant="outline">
-                  <Link href="/premium">Bulk-logg (Premium)</Link>
-                </Button>
+                <PremiumUpgradeDialog featureId="bulk" triggerLabel="Bulk-logg (Premium)" />
               )}
             </div>
           </div>

@@ -20,6 +20,7 @@ import {
 } from '@/lib/month-bounds';
 import { formatKronor } from '@/lib/money';
 import type { MonthlySummary } from '@/lib/types';
+import PremiumPaywall from '@/components/premium/premium-paywall';
 
 function SummaryColumn({ title, summary }: { title: string; summary: MonthlySummary | null }) {
   const hours = summary ? summary.workedMinutes / 60 : 0;
@@ -111,15 +112,12 @@ export default function CompareMonthPage() {
   if (!user.isPremium) {
     return (
       <AppShell userName={userName}>
-        <FadeIn className="mx-auto max-w-lg space-y-4">
-          <h1 className="text-2xl font-semibold">Jämför månader</h1>
-          <p className="text-sm text-muted-foreground">
-            Jämförelse av två månader ingår i Premium (senaste 6 månaderna).
-          </p>
-          <Button asChild>
-            <Link href="/premium">Uppgradera</Link>
-          </Button>
-        </FadeIn>
+        <PremiumPaywall
+          featureId="history"
+          detail="Jämförelse av två månader ingår i Premium (senaste 6 månaderna)."
+          backHref="/summary"
+          backLabel="Tillbaka till sammanfattning"
+        />
       </AppShell>
     );
   }

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { getSalaryGoal, upsertSalaryGoal } from '@/lib/api';
 import { kronorToOre, oreToKronor } from '@/lib/money';
+import PremiumPaywall from '@/components/premium/premium-paywall';
 
 interface FormState {
   error: string | null;
@@ -109,27 +110,12 @@ export default function SalaryGoalPage() {
   if (!user.isPremium) {
     return (
       <AppShell userName={userName}>
-        <FadeIn className="mx-auto w-full max-w-lg">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lönemål</CardTitle>
-              <CardDescription>
-                Sätt ett månatligt nettomål och följ progress i dashboard och sammanfattning.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <p className="text-sm text-muted-foreground">Lönemål ingår i Premium.</p>
-              <div className="flex gap-2">
-                <Button asChild>
-                  <Link href="/premium">Uppgradera</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href="/summary">Tillbaka</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </FadeIn>
+        <PremiumPaywall
+          featureId="goal"
+          detail="Sätt ett månatligt nettomål och följ progress + timmar kvar."
+          backHref="/summary"
+          backLabel="Tillbaka till sammanfattning"
+        />
       </AppShell>
     );
   }

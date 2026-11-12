@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
-import { Archive, ArchiveRestore, Crown, Plus, Trash2, Pencil } from 'lucide-react';
+import { Archive, ArchiveRestore, Plus, Trash2, Pencil } from 'lucide-react';
 import { PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
@@ -28,6 +28,7 @@ import {
 } from '@/lib/api';
 import { formatKronor } from '@/lib/money';
 import type { PublicAgreement } from '@/lib/types';
+import PremiumUpgradeDialog from '@/components/premium/premium-upgrade-dialog';
 
 const FREE_CAP = 1;
 const PREMIUM_CAP = 5;
@@ -142,13 +143,15 @@ export default function JobProfilesPage() {
               Max {PREMIUM_CAP} aktiva — arkivera en
             </Button>
           ) : (
-            <Button asChild size="lg" variant="outline" className="h-10 gap-1.5 self-start">
-              <Link href="/premium">
-                <Crown className="size-4" />
-                Uppgradera för fler
-              </Link>
-            </Button>
+            <PremiumUpgradeDialog
+              featureId="profiles"
+              triggerLabel="Uppgradera för fler"
+              triggerVariant="outline"
+              triggerSize="lg"
+              triggerClassName="h-10 gap-1.5 self-start"
+            />
           )}
+
         </div>
 
         {displayError ? <PageError message={displayError} /> : null}
@@ -193,10 +196,7 @@ export default function JobProfilesPage() {
                     profiles.map((profile) => {
                       const archived = profile.archivedAt != null;
                       return (
-                        <TableRow
-                          key={profile.id}
-                          className={archived ? 'opacity-60' : undefined}
-                        >
+                        <TableRow key={profile.id} className={archived ? 'opacity-60' : undefined}>
                           <TableCell className="font-medium">
                             <span className="inline-flex flex-wrap items-center gap-2">
                               {profile.name}
@@ -297,13 +297,15 @@ export default function JobProfilesPage() {
                   Max {PREMIUM_CAP} aktiva — arkivera en
                 </Button>
               ) : (
-                <Button asChild className="w-full gap-1.5" size="lg" variant="outline">
-                  <Link href="/premium">
-                    <Crown className="size-4" />
-                    Uppgradera till Premium
-                  </Link>
-                </Button>
+                <PremiumUpgradeDialog
+                  featureId="profiles"
+                  triggerLabel="Uppgradera till Premium"
+                  triggerVariant="outline"
+                  triggerSize="lg"
+                  triggerClassName="w-full gap-1.5"
+                />
               )}
+
             </CardContent>
           </Card>
         </div>

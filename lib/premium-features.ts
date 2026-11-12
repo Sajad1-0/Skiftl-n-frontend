@@ -28,12 +28,12 @@ export const PREMIUM_FEATURES: readonly PremiumFeature[] = [
   {
     id: 'bulk',
     title: 'Bulk-logg',
-    description: 'Logga up till 10 pass samtidigt med samma jobbprofil.',
+    description: 'Logga upp till 10 pass samtidigt med samma jobbprofil.',
   },
   {
     id: 'breaks',
-    title: 'Exakta rasintervall',
-    description: 'Flera raster per pass med start-slut inom arbetstiden.',
+    title: 'Exakta rastintervall',
+    description: 'Flera raster per pass med start–slut inom arbetstiden.',
   },
   {
     id: 'sick',
