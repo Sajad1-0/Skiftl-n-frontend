@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useActionState, useEffect, useState } from 'react';
-import { Crown } from 'lucide-react';
 import { PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
@@ -14,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { getTaxSettings, upsertTaxSettings } from '@/lib/api';
 import type { PublicTaxSettings } from '@/lib/types';
+import PremiumUpgradeDialog from '@/components/premium/premium-upgrade-dialog';
 
 interface FormState {
   error: string | null;
@@ -138,12 +138,13 @@ export default function TaxSettingsPage() {
                     : 'Sätt skattesats på din jobbprofil. Uppgradera för Skatteverkets tabell + mer exakt netto.'}
                 </p>
 
-                <Button asChild className="gap-1.5">
-                  <Link href="/premium">
-                    <Crown className="size-4" />
-                    Uppgradera till Premium
-                  </Link>
-                </Button>
+                <PremiumUpgradeDialog
+                  featureId="tax"
+                  triggerLabel="Uppgradera till Premium"
+                  triggerVariant="default"
+                  triggerClassName="gap-1.5"
+                />
+
               </div>
             ) : null}
 

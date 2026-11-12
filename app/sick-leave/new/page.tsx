@@ -7,6 +7,7 @@ import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
+import PremiumPaywall from '@/components/premium/premium-paywall';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { useJobProfiles } from '@/hooks/use-job-profiles';
 import { createSickLeave } from '@/lib/api';
+
 
 interface FormState {
   error: string | null;
@@ -67,13 +69,7 @@ export default function NewSickLeavePage() {
   if (!user.isPremium) {
     return (
       <AppShell userName={userName}>
-        <FadeIn className="mx-auto max-w-lg space-y-4">
-          <h1 className="text-2xl font-semibold">Ny sjukanmälan</h1>
-          <p className="text-sm text-muted-foreground">Kräver Premium.</p>
-          <Button asChild>
-            <Link href="/premium">Uppgradera</Link>
-          </Button>
-        </FadeIn>
+        <PremiumPaywall featureId="sick" backHref="/sick-leave" backLabel="Tillbaka" />
       </AppShell>
     );
   }

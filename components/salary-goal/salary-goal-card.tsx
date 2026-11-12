@@ -6,6 +6,7 @@ import { CircularProgress } from '@/components/ui/circular-progress';
 import { formatHoursToGoal } from '@/lib/goal-hours';
 import { formatKronor } from '@/lib/money';
 import { cn } from '@/lib/utils';
+import PremiumUpgradeDialog from '../premium/premium-upgrade-dialog';
 
 export interface SalaryGoalSummaryFields {
   goalOre: number | null;
@@ -95,9 +96,12 @@ export function SalaryGoalCard({
             <Link href="/salary-goal">Ändra mål</Link>
           </Button>
         ) : (
-          <Button asChild variant="outline" size="sm">
-            <Link href="/premium">Sätt mål (Premium)</Link>
-          </Button>
+          <PremiumUpgradeDialog
+            featureId="goal"
+            triggerLabel="Sätt mål (Premium)"
+            triggerVariant="outline"
+            triggerSize="sm"
+          />
         )}
       </CardContent>
     </Card>

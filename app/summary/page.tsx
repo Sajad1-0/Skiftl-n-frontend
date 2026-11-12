@@ -24,6 +24,8 @@ import { MonthPicker } from '@/components/history/month-picker';
 import { formatYearMonthSv, monthBoundsFor, yearMonthKey } from '@/lib/month-bounds';
 import { useState } from 'react';
 import { downloadMonthlySummaryPdf, triggerBlobDownload } from '@/lib/api';
+import PremiumUpgradeDialog from '@/components/premium/premium-upgrade-dialog';
+
 
 export default function MonthlySummaryPage() {
   const { user, userName, summary, isLoading, error, selectedMonth, setSelectedMonth } =
@@ -100,19 +102,16 @@ export default function MonthlySummaryPage() {
                 {isPdfPending ? 'Skapar PDF…' : 'Ladda ner PDF'}
               </Button>
             ) : (
-              <Button asChild variant="outline">
-                <Link href="/premium">PDF (Premium)</Link>
-              </Button>
+              <PremiumUpgradeDialog featureId="pdf" triggerLabel="PDF (Premium)" />
             )}
             {user.isPremium ? (
               <Button asChild variant="outline">
                 <Link href="/salary-goal">Redigera lönemål</Link>
               </Button>
             ) : (
-              <Button asChild variant="outline">
-                <Link href="/premium">Lönemål (Premium)</Link>
-              </Button>
+              <PremiumUpgradeDialog featureId="goal" triggerLabel="Lönemål (Premium)" />
             )}
+
             <Button asChild variant="outline">
               <Link href="/tax-settings">Skatteinställningar</Link>
             </Button>

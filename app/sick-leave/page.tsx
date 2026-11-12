@@ -29,6 +29,7 @@ import {
 } from '@/lib/month-bounds';
 import { formatKronor } from '@/lib/money';
 import type { PublicSickLeave } from '@/lib/types';
+import PremiumPaywall from '@/components/premium/premium-paywall';
 
 export default function SickLeavePage() {
   const { user, userName, isLoading: authLoading } = useAuthUser();
@@ -89,24 +90,7 @@ export default function SickLeavePage() {
   if (!user.isPremium) {
     return (
       <AppShell userName={userName}>
-        <FadeIn className="mx-auto w-full max-w-lg">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sjukanmälan</CardTitle>
-              <CardDescription>
-                Karensdag + 80 % sjuklön på schemalagda dagar ingår i Premium.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <Button asChild>
-                <Link href="/premium">Uppgradera</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/shifts">Tillbaka till pass</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </FadeIn>
+        <PremiumPaywall featureId="sick" backHref="/shifts" backLabel="Tillbaka till pass" />
       </AppShell>
     );
   }

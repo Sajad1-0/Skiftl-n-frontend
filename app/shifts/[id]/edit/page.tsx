@@ -24,6 +24,8 @@ import {
   localInputToIso,
   syncEndAtFromStart,
 } from '@/lib/shift-datetime';
+import PremiumUpgradeDialog from '@/components/premium/premium-upgrade-dialog';
+
 
 export default function EditShiftPage() {
   const params = useParams<{ id: string }>();
@@ -243,8 +245,19 @@ export default function EditShiftPage() {
                       onChange={(e) => setBreakMinutes(e.target.value)}
                       className="h-11"
                     />
+                    <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                      <span>Premium: ange exakta rasttider istället.</span>
+                      <PremiumUpgradeDialog
+                        featureId="breaks"
+                        triggerLabel="Uppgradera"
+                        triggerVariant="link"
+                        triggerSize="sm"
+                        triggerClassName="h-auto p-0 text-xs underline underline-offset-4"
+                      />
+                    </div>
                   </div>
                 )}
+
 
                 <div className="space-y-2">
                   <Label htmlFor="notes">Anteckning (valfritt)</Label>

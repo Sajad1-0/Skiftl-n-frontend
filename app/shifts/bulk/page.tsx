@@ -21,6 +21,7 @@ import { useJobProfiles } from '@/hooks/use-job-profiles';
 import { createBulkShifts } from '@/lib/api';
 import { localInputToIso, syncEndAtFromStart } from '@/lib/shift-datetime';
 import type { BulkCreateShiftsBody } from '@/lib/types';
+import PremiumPaywall from '@/components/premium/premium-paywall';
 
 const MAX_ROWS = 10;
 
@@ -146,33 +147,15 @@ export default function BulkShiftsPage() {
   if (!user) {
     return <AuthRequired />;
   }
-
   if (!user.isPremium) {
     return (
       <AppShell userName={userName}>
-        <FadeIn className="mx-auto w-full max-w-lg">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bulk-logg</CardTitle>
-              <CardDescription>
-                Logga upp till {MAX_ROWS} pass samtidigt med samma jobbprofil.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <p className="text-sm text-muted-foreground">
-                Bulk-logg ingår i Premium. Free kan logga ett pass i taget.
-              </p>
-              <div className="flex gap-2">
-                <Button asChild>
-                  <Link href="/premium">Uppgradera</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href="/shifts/new">Logga ett pass</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </FadeIn>
+        <PremiumPaywall
+          featureId="bulk"
+          detail={`Logga upp till ${MAX_ROWS} pass samtidigt. Free loggar ett pass i taget.`}
+          backHref="/shifts/new"
+          backLabel="Logga ett pass"
+        />
       </AppShell>
     );
   }

@@ -22,6 +22,7 @@ import { useMonthShiftStats } from '@/hooks/use-month-shift-stats';
 import { useMonthlySummary } from '@/hooks/use-monthly-summary';
 import { formatKronor } from '@/lib/money';
 import { MONTHLY_HOUR_TARGET } from '@/lib/shift-stats';
+import PremiumUpgradeDialog from '@/components/premium/premium-upgrade-dialog';
 
 export default function DashboardPage() {
   const { user, userName, shifts, stats, isLoading, error } = useMonthShiftStats();
@@ -66,9 +67,13 @@ export default function DashboardPage() {
                 <Link href="/shifts/bulk">Bulk-logg</Link>
               </Button>
             ) : (
-              <Button asChild size="lg" variant="outline" className="h-10">
-                <Link href="/premium">Bulk-logg (Premium)</Link>
-              </Button>
+              <PremiumUpgradeDialog
+                featureId="bulk"
+                triggerLabel="Bulk-logg (Premium)"
+                triggerVariant="outline"
+                triggerSize="lg"
+                triggerClassName="h-10"
+              />
             )}
           </div>
         </div>
@@ -136,7 +141,6 @@ export default function DashboardPage() {
               footnote="Uppskattning utifrån din nettointäkt/timme denna månad (eller jobbprofil)"
             />
           ) : null}
-
         </div>
         <FadeIn delayMs={80}>
           <Card>
