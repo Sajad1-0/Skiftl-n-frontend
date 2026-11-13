@@ -1,7 +1,3 @@
-/**
- * När start ändras: kopiera till slut om slut är tomt eller fortfarande speglar förra starten.
- * Så användaren bara behöver justera tid (eller datum vid nattpass).
- */
 export function syncEndAtFromStart(
   previousStartAt: string,
   nextStartAt: string,
@@ -28,7 +24,18 @@ export function isoToTimeHm(iso: string): string {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
-/** datetime-local → ISO UTC för API. */
+/** datetime-local → ISO UTC för API. Kastar om värdet är ogiltigt. */
 export function localInputToIso(value: string): string {
-  return new Date(value).toISOString();
+  const iso = tryLocalInputToIso(value);
+  if (!iso) {
+    throw new Error('Ogiltigt datum/tid');
+  }
+  return iso;
+}
+
+/** datetime-local → ISO UTC, eller null om ogiltigt. */
+export function tryLocalInputToIso(value: string): string | null {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
 }
