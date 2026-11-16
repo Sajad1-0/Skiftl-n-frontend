@@ -2,12 +2,13 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TimeHmSelect } from '@/components/shifts/time-hm-select';
 import { isoToTimeHm } from '@/lib/shift-datetime';
 import type { BreakIntervalsDto } from '@/lib/types';
 
 /** Rast i UI: bara klockslag (HH:mm). Datum sätts från passet vid sparning. */
+
 export interface BreakIntervalDraft {
   key: string;
   startTime: string;
@@ -81,28 +82,22 @@ export default function BreakIntervalsEditor({
         <p className="text-xs text-muted-foreground">Ingen rast. Lägg till intervall vid behov.</p>
       ) : (
         value.map((row) => (
-          <div key={row.key} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-            <Input
-              type="time"
+          <div key={row.key} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-start">
+            <TimeHmSelect
               value={row.startTime}
               disabled={disabled}
-              onChange={(e) =>
-                onChange(
-                  value.map((r) => (r.key === row.key ? { ...r, startTime: e.target.value } : r)),
-                )
-              }
               aria-label="Rast starttid"
+              onChange={(startTime) =>
+                onChange(value.map((r) => (r.key === row.key ? { ...r, startTime } : r)))
+              }
             />
-            <Input
-              type="time"
+            <TimeHmSelect
               value={row.endTime}
               disabled={disabled}
-              onChange={(e) =>
-                onChange(
-                  value.map((r) => (r.key === row.key ? { ...r, endTime: e.target.value } : r)),
-                )
-              }
               aria-label="Rast sluttid"
+              onChange={(endTime) =>
+                onChange(value.map((r) => (r.key === row.key ? { ...r, endTime } : r)))
+              }
             />
             <Button
               type="button"
@@ -110,11 +105,13 @@ export default function BreakIntervalsEditor({
               size="icon"
               disabled={disabled}
               aria-label="Ta bort rast"
+              className="justify-self-end sm:mt-1"
               onClick={() => onChange(value.filter((r) => r.key !== row.key))}
             >
               <Trash2 className="size-4" />
             </Button>
           </div>
+
         ))
       )}
     </div>

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { PageError } from '@/components/feedback/page-error';
 import PremiumUpgradeDialog from '@/components/premium/premium-upgrade-dialog';
 import BreakIntervalsEditor from '@/components/shifts/break-intervals-editor';
+import { DatetimeLocalFields } from '@/components/shifts/datetime-local-fields';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +17,8 @@ import {
   buildShiftSubmitData,
 } from '@/lib/shift-form';
 import { syncEndAtFromStart } from '@/lib/shift-datetime';
+
+
 
 interface ShiftFormProps {
   profiles: PublicJobProfile[];
@@ -93,32 +96,27 @@ export function ShiftForm({
 
       <div className="space-y-2">
         <Label htmlFor="startAt">Start</Label>
-        <Input
+        <DatetimeLocalFields
           id="startAt"
-          type="datetime-local"
           required
           value={values.startAt}
-          onChange={(e) => {
-            const nextStart = e.target.value;
+          onChange={(nextStart) => {
             setValues((current) => ({
               ...current,
               startAt: nextStart,
               endAt: syncEndAtFromStart(current.startAt, nextStart, current.endAt),
             }));
           }}
-          className="h-11"
         />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="endAt">Slut</Label>
-        <Input
+        <DatetimeLocalFields
           id="endAt"
-          type="datetime-local"
           required
           value={values.endAt}
-          onChange={(e) => patch({ endAt: e.target.value })}
-          className="h-11"
+          onChange={(nextEnd) => patch({ endAt: nextEnd })}
         />
         {showEndFromStartHint ? (
           <p className="text-xs text-muted-foreground">
@@ -145,6 +143,9 @@ export function ShiftForm({
             onChange={(e) => patch({ breakMinutes: e.target.value })}
             className="h-11"
           />
+
+
+
           <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
             <span>Premium: ange exakta rasttider istället.</span>
             <PremiumUpgradeDialog

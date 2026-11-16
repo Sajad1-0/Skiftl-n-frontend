@@ -22,6 +22,8 @@ import { createBulkShifts } from '@/lib/api';
 import { localInputToIso, syncEndAtFromStart } from '@/lib/shift-datetime';
 import type { BulkCreateShiftsBody } from '@/lib/types';
 import PremiumPaywall from '@/components/premium/premium-paywall';
+import { DatetimeLocalFields } from '@/components/shifts/datetime-local-fields';
+
 
 const MAX_ROWS = 10;
 
@@ -224,24 +226,20 @@ export default function BulkShiftsPage() {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor={`start-${row.key}`}>Start</Label>
-                          <Input
+                          <DatetimeLocalFields
                             id={`start-${row.key}`}
-                            type="datetime-local"
                             required
                             value={row.startAt}
-                            onChange={(e) => updateRowStart(row.key, e.target.value)}
-                            className="h-11"
+                            onChange={(next) => updateRowStart(row.key, next)}
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor={`end-${row.key}`}>Slut</Label>
-                          <Input
+                          <DatetimeLocalFields
                             id={`end-${row.key}`}
-                            type="datetime-local"
                             required
                             value={row.endAt}
-                            onChange={(e) => updateRow(row.key, { endAt: e.target.value })}
-                            className="h-11"
+                            onChange={(next) => updateRow(row.key, { endAt: next })}
                           />
                         </div>
                       </div>
