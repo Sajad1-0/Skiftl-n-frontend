@@ -16,7 +16,7 @@ Companion API: [Skiftl-n-backend](https://github.com/Sajad1-0/Skiftl-n-backend).
 - pnpm 11+
 - Running Shiftkit API (default `http://localhost:3001`)
 
-## Setup
+## Setup (local)
 
 ```bash
 pnpm install
@@ -27,13 +27,15 @@ cp .env.example .env.local
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_API_URL` | Backend base URL (`http://localhost:3001`) |
+| `NEXT_PUBLIC_API_URL` | Backend base URL (local: `http://localhost:3001`) |
 
 Optional:
 
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_APP_URL` | Public app URL (metadata / Open Graph) |
+
+`NEXT_PUBLIC_*` values are inlined at **build** time. Local `.env` / `.env.local` is gitignored and is **not** uploaded to Vercel automatically.
 
 ## Scripts
 
@@ -91,6 +93,44 @@ UI mirrors backend gates (`user.isPremium`). Enforcement is always on the API �
 2. Seed tax tables / agreements on the backend if needed.
 3. In this repo: `pnpm dev`.
 4. Open [http://localhost:3000](http://localhost:3000).
+
+## Deployment (Vercel)
+
+Production layout:
+
+| Piece | Host |
+|-------|------|
+| Frontend | **Vercel** (this repo) |
+| API + Postgres | **Railway** ([Skiftl-n-backend](https://github.com/Sajad1-0/Skiftl-n-backend)) |
+
+Do **not** deploy the Express API on Vercel — it is a long-running Node server with Postgres/Stripe webhooks and belongs on Railway.
+
+### Vercel environment variables
+
+Project → **Settings → Environment Variables** (set **before** build / redeploy):
+
+| Name | Example | Notes |
+|------|---------|--------|
+| `NEXT_PUBLIC_API_URL` | `https://….up.railway.app` | Railway API public URL, **no** trailing slash. Required — build fails without it. |
+| `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` | Optional but recommended |
+
+After changing `NEXT_PUBLIC_*`, **Redeploy** so the build picks them up.
+
+### Wire frontend ↔ backend
+
+1. Deploy API on Railway and confirm `GET /health` → `database: connected`.
+2. Set Vercel `NEXT_PUBLIC_API_URL` to that API origin.
+3. On Railway API, set `FRONTEND_URL` to the Vercel origin (Stripe redirects / portal return).
+4. Configure Stripe webhook to `https://<api-domain>/billing/webhook` with signing secret `whsec_…` on Railway.
+
+### Custom domain (optional)
+
+Vercel `*.vercel.app` is enough for early testing. When you buy a domain (Loopia, Cloudflare, etc.):
+
+1. Add the domain in Vercel → Domains.
+2. Update `NEXT_PUBLIC_APP_URL` (and redeploy).
+3. Update Railway `FRONTEND_URL` to the same origin.
+4. Optionally add `api.yourdomain.com` on Railway later; then update `NEXT_PUBLIC_API_URL` and the Stripe webhook URL.
 
 ## License
 
