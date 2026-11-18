@@ -85,7 +85,7 @@ function PremiumPageContent() {
               <CardDescription>
                 {user.isPremium
                   ? user.hasStripeCustomer
-                    ? 'Alla Premium-funktioner är upplåsta. Hantera betalning via Stripe.'
+                    ? 'Alla Premium-funktioner är upplåsta. Om du avslutar i Stripe behåller du Premium till periodens slut (oftast resten av månaden).'
                     : 'Alla Premium-funktioner är upplåsta på det här kontot.'
                   : 'Betala månadsvis. Avsluta när som helst via Stripe-portalen.'}
               </CardDescription>

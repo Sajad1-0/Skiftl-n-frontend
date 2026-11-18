@@ -35,7 +35,13 @@ export function useBillingActions(): BillingActions {
     setIsPending(true);
     try {
       const { url } = await createBillingPortal();
-      window.location.href = url;
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        // Popup blocker — same-tab fallback so the user still reaches Stripe.
+        window.location.href = url;
+        return;
+      }
+      setIsPending(false);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Portal misslyckades');
       setIsPending(false);
