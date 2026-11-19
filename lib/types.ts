@@ -1,9 +1,15 @@
+export type PremiumSource = 'stripe' | 'bypass' | 'beta' | 'none';
+
 export interface PublicUser {
   id: string;
   firstName: string;
   lastName: string | null;
   email: string;
   isPremium: boolean;
+  /** Varifrån Premium kommer just nu (styr banner / CTA). */
+  premiumSource: PremiumSource;
+  /** ISO-slutdatum om premiumSource === 'beta'; annars null. */
+  premiumBetaEndsAt: string | null;
   /** True om Stripe-kund finns — då kan portal öppnas. */
   hasStripeCustomer: boolean;
   monthlySalaryGoal: number | null;

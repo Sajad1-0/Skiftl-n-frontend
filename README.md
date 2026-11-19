@@ -77,7 +77,9 @@ Modern SaaS (Notion/Linear-inspired): clean surfaces, blue accent, shadcn primit
 
 ## Free vs Premium
 
-UI mirrors backend gates (`user.isPremium`). Enforcement is always on the API — never trust the client alone.
+UI mirrors backend gates (`user.isPremium`, `premiumSource`, `premiumBetaEndsAt`). Enforcement is always on the API — never trust the client alone.
+
+During an active **Premium beta** (`PREMIUM_BETA_ENDS_AT` on the API), the shell shows a banner with the end date and `isPremium` is true for everyone until that instant.
 
 | Feature | Free | Premium |
 |---------|------|---------|

@@ -16,11 +16,13 @@ import {
   Thermometer,
   Target,
 } from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { Logo } from '@/components/brand/logo';
+import { PremiumBetaBanner } from '@/components/premium/premium-beta-banner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { clearToken } from '@/lib/auth-storage';
+import { getCurrentUser } from '@/lib/api';
+import { clearToken, getToken } from '@/lib/auth-storage';
 import { BRAND_DOMAIN, BRAND_NAME } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 
@@ -45,6 +47,29 @@ export function AppShell({ children, userName }: AppShellProps) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [premiumBetaEndsAt, setPremiumBetaEndsAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!getToken()) return;
+
+    void getCurrentUser()
+      .then((user) => {
+        if (cancelled) return;
+        if (user.premiumSource === 'beta' && user.premiumBetaEndsAt) {
+          setPremiumBetaEndsAt(user.premiumBetaEndsAt);
+        } else {
+          setPremiumBetaEndsAt(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPremiumBetaEndsAt(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   function handleLogout() {
     startTransition(() => {
@@ -167,6 +192,8 @@ export function AppShell({ children, userName }: AppShellProps) {
             </nav>
           </div>
         ) : null}
+
+        {premiumBetaEndsAt ? <PremiumBetaBanner endsAtIso={premiumBetaEndsAt} /> : null}
 
         <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
       </div>

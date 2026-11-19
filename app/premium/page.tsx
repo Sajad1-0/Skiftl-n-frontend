@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthUser, formatUserName } from '@/hooks/use-auth-user';
 import { useBillingActions } from '@/hooks/use-billing-actions';
 import { BRAND_NAME } from '@/lib/brand';
+import { formatPremiumBetaEndsAt } from '@/lib/premium-beta';
 
 function PremiumPageContent() {
   const searchParams = useSearchParams();
@@ -30,8 +31,65 @@ function PremiumPageContent() {
 
   const success = searchParams.get('success') === '1';
   const canceled = searchParams.get('canceled') === '1';
-  const showPortal = user.isPremium && user.hasStripeCustomer;
-  const showUpgrade = !user.isPremium;
+  const isBeta = user.premiumSource === 'beta';
+  const betaEndsLabel =
+    user.premiumBetaEndsAt != null ? formatPremiumBetaEndsAt(user.premiumBetaEndsAt) : null;
+
+  const showPortal = user.hasStripeCustomer && (user.premiumSource === 'stripe' || isBeta);
+  const showUpgrade = user.premiumSource === 'none';
+  const showBetaCheckout = isBeta;
+
+  const statusBadge = (() => {
+    switch (user.premiumSource) {
+      case 'beta':
+        return 'Premium-beta';
+      case 'stripe':
+        return 'Aktiv';
+      case 'bypass':
+        return 'Premium';
+      case 'none':
+        return 'Gratisplan';
+      default: {
+        const _exhaustive: never = user.premiumSource;
+        return _exhaustive;
+      }
+    }
+  })();
+
+  const title = (() => {
+    switch (user.premiumSource) {
+      case 'beta':
+        return 'Premium-beta';
+      case 'stripe':
+      case 'bypass':
+        return 'Du har Premium';
+      case 'none':
+        return 'Uppgradera';
+      default: {
+        const _exhaustive: never = user.premiumSource;
+        return _exhaustive;
+      }
+    }
+  })();
+
+  const description = (() => {
+    switch (user.premiumSource) {
+      case 'beta':
+        return betaEndsLabel
+          ? `Alla Premium-funktioner är öppna till ${betaEndsLabel}. Därefter behövs Stripe-abonnemang (eller gratisplan).`
+          : 'Alla Premium-funktioner är öppna under beta.';
+      case 'stripe':
+        return 'Alla Premium-funktioner är upplåsta. Om du avslutar i Stripe behåller du Premium till periodens slut (oftast resten av månaden).';
+      case 'bypass':
+        return 'Alla Premium-funktioner är upplåsta på det här kontot.';
+      case 'none':
+        return 'Betala månadsvis. Avsluta när som helst via Stripe-portalen.';
+      default: {
+        const _exhaustive: never = user.premiumSource;
+        return _exhaustive;
+      }
+    }
+  })();
 
   return (
     <AppShell userName={formatUserName(user)}>
@@ -40,18 +98,20 @@ function PremiumPageContent() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Premium</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              månadsabonnemang via Stripe för {BRAND_NAME}. Avsluta när som helst.
+              {isBeta
+                ? `Tidsbegränsad beta för ${BRAND_NAME} — synligt slutdatum, inget krav på kort.`
+                : `Månadsabonnemang via Stripe för ${BRAND_NAME}. Avsluta när som helst.`}
             </p>
           </div>
           <Badge variant="secondary" className="self-start">
-            {user.isPremium ? 'Aktiv' : 'Gratisplan'}
+            {statusBadge}
           </Badge>
         </div>
 
         {error ? <PageError message={error} variant="inline" /> : null}
 
         {success ? (
-          <div className="rounded-lg border border-green-200 bg-green-50 py-3 text-sm text-green-800">
+          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
             Tack! Premium aktiveras när Stripe bekräftat betalningen (oftast inom några sekunder).
             Ladda om sidan om statusen inte uppdaterats.
           </div>
@@ -80,15 +140,9 @@ function PremiumPageContent() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Crown className="size-5 text-primary" />
-                {user.isPremium ? 'Du har Premium' : 'Uppgradera'}
+                {title}
               </CardTitle>
-              <CardDescription>
-                {user.isPremium
-                  ? user.hasStripeCustomer
-                    ? 'Alla Premium-funktioner är upplåsta. Om du avslutar i Stripe behåller du Premium till periodens slut (oftast resten av månaden).'
-                    : 'Alla Premium-funktioner är upplåsta på det här kontot.'
-                  : 'Betala månadsvis. Avsluta när som helst via Stripe-portalen.'}
-              </CardDescription>
+              <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <ul className="space-y-2 text-sm text-muted-foreground">
@@ -102,7 +156,7 @@ function PremiumPageContent() {
                 </li>
                 <li className="flex gap-2">
                   <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                  Avsluta via Stripe-portalen
+                  {isBeta ? 'Beta utan kort — Stripe valfritt' : 'Avsluta via Stripe-portalen'}
                 </li>
               </ul>
 
@@ -120,6 +174,17 @@ function PremiumPageContent() {
               {showUpgrade ? (
                 <Button type="button" disabled={isPending} onClick={() => void startCheckout()}>
                   {isPending ? 'Öppnar Stripe…' : 'Uppgradera med Stripe'}
+                </Button>
+              ) : null}
+
+              {showBetaCheckout ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPending}
+                  onClick={() => void startCheckout()}
+                >
+                  {isPending ? 'Öppnar Stripe…' : 'Säkra Premium efter beta'}
                 </Button>
               ) : null}
             </CardContent>

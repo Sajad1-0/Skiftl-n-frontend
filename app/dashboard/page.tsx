@@ -99,7 +99,13 @@ export default function DashboardPage() {
                 <CardTitle>Månadsöversikt</CardTitle>
                 <CardDescription>Timmar och beräknad bruttolön denna månad</CardDescription>
               </div>
-              <Badge variant="secondary">{user.isPremium ? 'Premium' : 'Gratis'}</Badge>
+              <Badge variant="secondary">
+                {user.premiumSource === 'beta'
+                  ? 'Premium-beta'
+                  : user.isPremium
+                    ? 'Premium'
+                    : 'Gratis'}
+              </Badge>
             </CardHeader>
             <CardContent className="space-y-5">
               <div>
