@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CircularProgress } from '@/components/ui/circular-progress';
 import { formatHoursToGoal } from '@/lib/goal-hours';
-import { formatKronor } from '@/lib/money';
+import { formatKronor, formatOptionalKronor } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import PremiumUpgradeDialog from '../premium/premium-upgrade-dialog';
 
@@ -13,7 +13,7 @@ export interface SalaryGoalSummaryFields {
   goalProgressPercent: number;
   goalRemainingOre: number | null;
   hoursToGoalEstimate: number | null;
-  netOre: number;
+  netOre: number | null;
 }
 
 interface SalaryGoalCardProps {
@@ -39,7 +39,8 @@ export function SalaryGoalCard({
   className,
 }: SalaryGoalCardProps) {
   const displayedGoalOre = isPremium ? (summary?.goalOre ?? null) : null;
-  const progress = isPremium ? (summary?.goalProgressPercent ?? 0) : 0;
+  const hasNetForProgress = isPremium && summary?.netOre != null;
+  const progress = hasNetForProgress ? (summary?.goalProgressPercent ?? 0) : null;
 
   const hoursToGoalLabel =
     isPremium && summary?.goalOre != null
@@ -72,7 +73,15 @@ export function SalaryGoalCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-3 pb-6">
-        <CircularProgress value={progress} label="av mål" />
+        {progress != null ? (
+          <CircularProgress value={progress} label="av mål" />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {isPremium
+              ? 'Progress saknas tills netto kan beräknas (schablon eller skattetabell).'
+              : 'Sätt Premium-mål för att se progress.'}
+          </p>
+        )}
         {showPremiumBadge ? (
           <Badge variant="secondary">{isPremium ? 'Premium' : 'Standard'}</Badge>
         ) : null}
@@ -80,11 +89,13 @@ export function SalaryGoalCard({
           <>
             <p className="text-sm text-muted-foreground">Beräknad lön (netto)</p>
             <p className="text-2xl font-semibold tabular-nums">
-              {summary ? formatKronor(summary.netOre) : '—'}
+              {summary ? formatOptionalKronor(summary.netOre) : '—'}
             </p>
           </>
         ) : null}
-        {caption ? <p className="text-center text-sm text-muted-foreground">{caption}</p> : null}
+        {caption && progress != null ? (
+          <p className="text-center text-sm text-muted-foreground">{caption}</p>
+        ) : null}
         {hoursToGoalLabel ? (
           <p className="text-center text-sm font-medium text-foreground">{hoursToGoalLabel}</p>
         ) : null}

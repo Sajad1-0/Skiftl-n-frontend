@@ -28,7 +28,8 @@ export interface PublicJobProfile {
   userId: string;
   name: string;
   hourlyWage: number; // Öre
-  taxRate: number;
+  /** null = ingen schablon; Premium använder skattetabell */
+  taxRate: number | null;
   employerName: string | null;
   isPrimary: boolean;
   collectiveAgreementId: string | null;
@@ -39,7 +40,7 @@ export interface PublicJobProfile {
 export interface CreateJobProfileBody {
   name: string;
   hourlyWage: number;
-  taxRate: number;
+  taxRate?: number | null;
   employerName?: string;
   isPrimary?: boolean;
   collectiveAgreementId?: string | null;
@@ -47,7 +48,7 @@ export interface CreateJobProfileBody {
 export interface UpdateJobProfileBody {
   name?: string;
   hourlyWage?: number;
-  taxRate?: number;
+  taxRate?: number | null;
   employerName?: string | null;
   isPrimary?: boolean;
   collectiveAgreementId?: string | null;
@@ -146,15 +147,15 @@ export interface SickLeaveSummaryRow {
 export interface ProfileBreakDown {
   jobProfileId: string;
   name: string;
-  taxRate: number;
+  taxRate: number | null;
   shiftCount: number;
   workedMinutes: number;
   breakMinutes: number;
   baseOre: number;
   obOre: number;
   grossOre: number;
-  taxOre: number;
-  netOre: number;
+  taxOre: number | null;
+  netOre: number | null;
 }
 
 export interface MonthlySummary {
@@ -166,8 +167,8 @@ export interface MonthlySummary {
   baseOre: number;
   obOre: number;
   grossOre: number;
-  taxOre: number;
-  netOre: number;
+  taxOre: number | null;
+  netOre: number | null;
   taxMode: TaxMode;
   goalOre: number | null;
   goalProgressPercent: number;

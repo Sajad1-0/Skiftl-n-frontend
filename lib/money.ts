@@ -13,3 +13,9 @@ export function formatKronor(ore: number): string {
     currency: 'SEK',
   }).format(oreToKronor(ore));
 }
+
+/** Visa — när skatt/netto saknas (t.ex. ingen schablon och ingen tabell). */
+export function formatOptionalKronor(ore: number | null | undefined): string {
+  if (ore == null) return '—';
+  return formatKronor(ore);
+}

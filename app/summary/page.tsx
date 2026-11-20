@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import StateCard from '@/components/state-card';
 import { useMonthlySummary } from '@/hooks/use-monthly-summary';
-import { formatKronor } from '@/lib/money';
+import { formatKronor, formatOptionalKronor } from '@/lib/money';
 import { MONTHLY_HOUR_TARGET } from '@/lib/shift-stats';
 import { MonthPicker } from '@/components/history/month-picker';
 import { formatYearMonthSv, monthBoundsFor, yearMonthKey } from '@/lib/month-bounds';
@@ -53,8 +53,8 @@ export default function MonthlySummaryPage() {
       ? [{ label: 'Sjuklön', value: formatKronor(summary?.sickPayOre ?? 0) }]
       : []),
     { label: 'OB-tillägg', value: formatKronor(summary?.obOre ?? 0) },
-    { label: 'Skatt', value: formatKronor(summary?.taxOre ?? 0) },
-    { label: 'Netto', value: formatKronor(summary?.netOre ?? 0) },
+    { label: 'Skatt', value: formatOptionalKronor(summary?.taxOre) },
+    { label: 'Netto', value: formatOptionalKronor(summary?.netOre) },
   ];
 
   async function handleDownloadPdf() {
@@ -169,7 +169,7 @@ export default function MonthlySummaryPage() {
                           {(row.workedMinutes / 60).toFixed(1)} h
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {formatKronor(row.taxOre)}
+                          {formatOptionalKronor(row.taxOre)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {formatKronor(row.obOre)}
@@ -178,7 +178,7 @@ export default function MonthlySummaryPage() {
                           {formatKronor(row.grossOre)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {formatKronor(row.netOre)}
+                          {formatOptionalKronor(row.netOre)}
                         </TableCell>
                       </TableRow>
                     ))

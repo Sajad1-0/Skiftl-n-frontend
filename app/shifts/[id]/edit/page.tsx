@@ -24,7 +24,7 @@ function stubJobProfile(id: string): PublicJobProfile {
     userId: '',
     name: 'Okänd profil',
     hourlyWage: 0,
-    taxRate: 0,
+    taxRate: null,
     employerName: null,
     isPrimary: false,
     collectiveAgreementId: null,

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { getJobProfile, updateJobProfile, listCollectiveAgreements } from '@/lib/api';
 import { kronorToOre, oreToKronor } from '@/lib/money';
+import { parseOptionalTaxRateInput } from '@/lib/tax-rate';
 import type { PublicAgreement, PublicJobProfile } from '@/lib/types';
 
 interface FormState {
@@ -68,7 +69,7 @@ export default function EditJobProfilePage() {
       const name = String(formData.get('name') ?? '').trim();
       const employerName = String(formData.get('employerName') ?? '').trim();
       const hourlyWageKronor = Number(formData.get('hourlyWageKronor'));
-      const taxRate = Number(formData.get('taxRate'));
+      const taxRateParsed = parseOptionalTaxRateInput(formData.get('taxRate'));
       const isPrimary = formData.get('isPrimary') === 'on';
       const agreementRaw = String(formData.get('collectiveAgreementId') ?? '').trim();
 
@@ -80,8 +81,8 @@ export default function EditJobProfilePage() {
         return { error: 'Ange en giltig timlön i kronor' };
       }
 
-      if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100) {
-        return { error: 'Skattesats måste vara mellan 0 och 100' };
+      if (!taxRateParsed.ok) {
+        return { error: taxRateParsed.error };
       }
 
       if (employerName.length > 0 && employerName.length < 2) {
@@ -92,7 +93,7 @@ export default function EditJobProfilePage() {
         await updateJobProfile(profileId, {
           name,
           hourlyWage: kronorToOre(hourlyWageKronor),
-          taxRate,
+          taxRate: taxRateParsed.value,
           employerName: employerName.length === 0 ? null : employerName,
           isPrimary,
           collectiveAgreementId: agreementRaw.length > 0 ? agreementRaw : null,
@@ -178,18 +179,22 @@ export default function EditJobProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="taxRate">Skattesats (%)</Label>
+                <Label htmlFor="taxRate">Skattesats (%) — valfritt</Label>
                 <Input
                   id="taxRate"
                   name="taxRate"
                   type="number"
-                  required
                   min={0}
                   max={100}
                   step="0.01"
-                  defaultValue={Number(profile.taxRate)}
+                  defaultValue={profile.taxRate != null ? Number(profile.taxRate) : undefined}
+                  placeholder="30"
                   className="h-11"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Schablon för netto utan tabell. Premium: lämna tomt och använd Skatteverkets
+                  tabell under Skatt.
+                </p>
               </div>
 
               <div className="space-y-2">

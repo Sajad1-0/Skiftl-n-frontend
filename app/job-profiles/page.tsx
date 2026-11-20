@@ -209,7 +209,9 @@ export default function JobProfilesPage() {
                           <TableCell className="tabular-nums">
                             {formatKronor(profile.hourlyWage)}
                           </TableCell>
-                          <TableCell className="tabular-nums">{profile.taxRate}%</TableCell>
+                          <TableCell className="tabular-nums">
+                            {profile.taxRate != null ? `${profile.taxRate}%` : '—'}
+                          </TableCell>
                           <TableCell className="text-muted-foreground">
                             {profile.employerName ?? '—'}
                           </TableCell>
@@ -281,7 +283,7 @@ export default function JobProfilesPage() {
               <CardTitle>Skapa jobbprofil</CardTitle>
               <CardDescription>
                 {canCreate
-                  ? 'Lägg till timlön och skatt för ett jobb.'
+                  ? 'Lägg till timlön (skattesats är valfri).'
                   : isPremium
                     ? 'Du har nått max 5 aktiva. Arkivera en profil för att skapa ny.'
                     : 'Gratisplan tillåter en profil. Uppgradera till Premium för fler.'}

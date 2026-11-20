@@ -18,7 +18,7 @@ import {
   monthBoundsFor,
   type YearMonth,
 } from '@/lib/month-bounds';
-import { formatKronor } from '@/lib/money';
+import { formatKronor, formatOptionalKronor } from '@/lib/money';
 import type { MonthlySummary } from '@/lib/types';
 import PremiumPaywall from '@/components/premium/premium-paywall';
 
@@ -45,11 +45,11 @@ function SummaryColumn({ title, summary }: { title: string; summary: MonthlySumm
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Skatt</span>
-          <span>{formatKronor(summary?.taxOre ?? 0)}</span>
+          <span>{formatOptionalKronor(summary?.taxOre)}</span>
         </div>
         <div className="flex justify-between font-medium">
           <span>Netto</span>
-          <span>{formatKronor(summary?.netOre ?? 0)}</span>
+          <span>{formatOptionalKronor(summary?.netOre)}</span>
         </div>
       </CardContent>
     </Card>
@@ -122,7 +122,10 @@ export default function CompareMonthPage() {
     );
   }
 
-  const deltaNet = (summaryB?.netOre ?? 0) - (summaryA?.netOre ?? 0);
+  const deltaNet =
+    summaryA?.netOre != null && summaryB?.netOre != null
+      ? summaryB.netOre - summaryA.netOre
+      : null;
 
   return (
     <AppShell userName={userName}>
@@ -153,8 +156,9 @@ export default function CompareMonthPage() {
             <CardDescription>Netto</CardDescription>
           </CardHeader>
           <CardContent className="text-lg font-semibold tabular-nums">
-            {deltaNet >= 0 ? '+' : ''}
-            {formatKronor(deltaNet)}
+            {deltaNet == null
+              ? '—'
+              : `${deltaNet >= 0 ? '+' : ''}${formatKronor(deltaNet)}`}
           </CardContent>
         </Card>
       </FadeIn>

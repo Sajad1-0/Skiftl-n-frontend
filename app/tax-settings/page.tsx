@@ -124,7 +124,7 @@ export default function TaxSettingsPage() {
             <CardDescription>
               {isPremium
                 ? 'Välj Skatteverkets tabellnummer (finns på lönespecen). Kolumn 1 gäller vanlig lön.'
-                : 'Gratisplan använder manuell skattesats (%) på jobbprofilen. Skattetabell ingår i Premium.'}
+                : 'Gratisplan kan använda manuell skattesats (%) på jobbprofilen (valfritt). Skattetabell ingår i Premium.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -135,7 +135,7 @@ export default function TaxSettingsPage() {
                 <p className="text-sm text-muted-foreground">
                   {settings
                     ? 'Du har sparade tabellvärden, men de används inte förrän du uppgradera. Ändra manuell % under Jobbprofiler.'
-                    : 'Sätt skattesats på din jobbprofil. Uppgradera för Skatteverkets tabell + mer exakt netto.'}
+                    : 'Du kan sätta skattesats på jobbprofilen för schablonnetto. Uppgradera för Skatteverkets tabell.'}
                 </p>
 
                 <PremiumUpgradeDialog
