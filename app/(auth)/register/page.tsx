@@ -132,9 +132,24 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Har du redan konto?{' '}
-            <Link href="/login" className="font-medium text-foreground underline underline-offset-4">
+            <Link
+              href="/login"
+              className="font-medium text-foreground underline underline-offset-4"
+            >
               Logga in
             </Link>
+          </p>
+
+          <p className="text-center text-xs text-muted-foreground mt-2">
+            Genom att skapa konto godkänner du våra{' '}
+            <Link href="/terms" className="underline underline-offset-4 hover:text-foreground">
+              <strong>Villkor</strong>
+            </Link>{' '}
+            och{' '}
+            <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground">
+              <strong>integritetspolicy</strong>
+            </Link>
+            .
           </p>
         </CardContent>
       </Card>
