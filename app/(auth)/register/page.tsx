@@ -29,12 +29,18 @@ export default function RegisterPage() {
       const lastName = String(formData.get('lastName') ?? '').trim();
       const email = String(formData.get('email') ?? '').trim();
       const password = String(formData.get('password') ?? '');
+      const acceptedTerms = formData.get('acceptedTerms') === 'on';
+
+      if (!acceptedTerms) {
+        return { error: 'Du måste godkänna villkor och integritetspolicy' };
+      }
       try {
         const data = await register({
           firstName,
           lastName: lastName.length > 0 ? lastName : undefined,
           email,
           password,
+          acceptedTerms: true,
         });
         saveToken(data.token);
         router.push('/dashboard');
@@ -124,6 +130,33 @@ export default function RegisterPage() {
 
             {state.error ? <PageError message={state.error} /> : null}
 
+            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
+              <input
+                id="acceptedTerms"
+                name="acceptedTerms"
+                type="checkbox"
+                required
+                className="mt-1 size-4 accent-primary"
+              />
+              <label
+                htmlFor="acceptedTerms"
+                className="text-xs leading-relaxed text-muted-foreground"
+              >
+                Jag har läst och godkänner{' '}
+                <Link href="/terms" className="underline underline-offset-4 hover:text-foreground">
+                  villkoren
+                </Link>{' '}
+                och{' '}
+                <Link
+                  href="/privacy"
+                  className="underline underline-offset-4 hover:text-foreground"
+                >
+                  integritetspolicyn
+                </Link>
+                .
+              </label>
+            </div>
+
             <Button type="submit" disabled={isPending} size="lg" className="mt-1 h-11 w-full gap-2">
               {isPending ? 'Skapar konto…' : 'Registrera'}
               <ArrowRight className="size-4" />
@@ -138,18 +171,6 @@ export default function RegisterPage() {
             >
               Logga in
             </Link>
-          </p>
-
-          <p className="text-center text-xs text-muted-foreground mt-2">
-            Genom att skapa konto godkänner du våra{' '}
-            <Link href="/terms" className="underline underline-offset-4 hover:text-foreground">
-              <strong>Villkor</strong>
-            </Link>{' '}
-            och{' '}
-            <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground">
-              <strong>integritetspolicy</strong>
-            </Link>
-            .
           </p>
         </CardContent>
       </Card>

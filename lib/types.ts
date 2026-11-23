@@ -201,6 +201,7 @@ export interface RegisterBody {
   lastName?: string;
   email: string;
   password: string;
+  acceptedTerms: true;
 }
 
 export interface LoginBody {

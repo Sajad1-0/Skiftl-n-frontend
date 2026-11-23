@@ -3,6 +3,7 @@ import { Logo } from '@/components/brand/logo';
 import { FadeIn } from '@/components/motion/fade-in';
 import { Button } from '@/components/ui/button';
 import { BRAND_NAME } from '@/lib/brand';
+import { SiteFooter } from '@/components/layout/site-footer';
 
 export default function HomePage() {
   return (
@@ -41,6 +42,7 @@ export default function HomePage() {
           </Button>
         </div>
       </FadeIn>
+      <SiteFooter className="relative z-10" />
     </main>
   );
 }
