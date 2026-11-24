@@ -22,9 +22,12 @@ import type {
 } from './types';
 import { getToken } from './auth-storage';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL saknas');
+/** Lazy so Next build/prerender does not crash when env is only set at runtime. */
+function getApiUrl(): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) throw new Error('NEXT_PUBLIC_API_URL saknas');
+  return apiUrl;
+}
 
 async function parseJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
@@ -41,7 +44,7 @@ function authHeaders(): HeadersInit {
 }
 
 export async function register(body: RegisterBody): Promise<AuthSuccessData> {
-  const response = await fetch(`${API_URL}/auth/register`, {
+  const response = await fetch(`${getApiUrl()}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -57,7 +60,7 @@ export async function register(body: RegisterBody): Promise<AuthSuccessData> {
 }
 
 export async function login(body: LoginBody): Promise<AuthSuccessData> {
-  const response = await fetch(`${API_URL}/auth/login`, {
+  const response = await fetch(`${getApiUrl()}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -77,7 +80,7 @@ export async function getCurrentUser(): Promise<PublicUser> {
 
   if (!token) throw new Error('Ingen token - logga in igen');
 
-  const response = await fetch(`${API_URL}/auth/me`, {
+  const response = await fetch(`${getApiUrl()}/auth/me`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -98,7 +101,7 @@ export async function listJobProfiles(params?: {
   if (params?.includeArchived) search.set('includeArchived', 'true');
   const qs = search.toString();
 
-  const response = await fetch(`${API_URL}/job-profiles${qs ? `?${qs}` : ''}`, {
+  const response = await fetch(`${getApiUrl()}/job-profiles${qs ? `?${qs}` : ''}`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -113,7 +116,7 @@ export async function listJobProfiles(params?: {
 }
 
 export async function createJobProfile(body: CreateJobProfileBody): Promise<PublicJobProfile> {
-  const response = await fetch(`${API_URL}/job-profiles`, {
+  const response = await fetch(`${getApiUrl()}/job-profiles`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -129,7 +132,7 @@ export async function createJobProfile(body: CreateJobProfileBody): Promise<Publ
 }
 
 export async function getJobProfile(id: string): Promise<PublicJobProfile> {
-  const response = await fetch(`${API_URL}/job-profiles/${id}`, {
+  const response = await fetch(`${getApiUrl()}/job-profiles/${id}`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -147,7 +150,7 @@ export async function updateJobProfile(
   id: string,
   body: UpdateJobProfileBody,
 ): Promise<PublicJobProfile> {
-  const response = await fetch(`${API_URL}/job-profiles/${id}`, {
+  const response = await fetch(`${getApiUrl()}/job-profiles/${id}`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -163,7 +166,7 @@ export async function updateJobProfile(
 }
 
 export async function deleteJobProfile(id: string): Promise<void> {
-  const response = await fetch(`${API_URL}/job-profiles/${id}`, {
+  const response = await fetch(`${getApiUrl()}/job-profiles/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
@@ -176,7 +179,7 @@ export async function deleteJobProfile(id: string): Promise<void> {
 }
 
 export async function archiveJobProfile(id: string): Promise<PublicJobProfile> {
-  const response = await fetch(`${API_URL}/job-profiles/${id}/archive`, {
+  const response = await fetch(`${getApiUrl()}/job-profiles/${id}/archive`, {
     method: 'POST',
     headers: authHeaders(),
   });
@@ -190,7 +193,7 @@ export async function archiveJobProfile(id: string): Promise<PublicJobProfile> {
 }
 
 export async function unarchiveJobProfile(id: string): Promise<PublicJobProfile> {
-  const response = await fetch(`${API_URL}/job-profiles/${id}/unarchive`, {
+  const response = await fetch(`${getApiUrl()}/job-profiles/${id}/unarchive`, {
     method: 'POST',
     headers: authHeaders(),
   });
@@ -209,7 +212,7 @@ export async function listShifts(params?: { from?: string; to?: string }): Promi
   if (params?.to) search.set('to', params.to);
   const qs = search.toString();
 
-  const response = await fetch(`${API_URL}/shifts${qs ? `?${qs}` : ''}`, {
+  const response = await fetch(`${getApiUrl()}/shifts${qs ? `?${qs}` : ''}`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -224,7 +227,7 @@ export async function listShifts(params?: { from?: string; to?: string }): Promi
 }
 
 export async function createShift(body: CreateShiftBody): Promise<PublicShift> {
-  const response = await fetch(`${API_URL}/shifts`, {
+  const response = await fetch(`${getApiUrl()}/shifts`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -240,7 +243,7 @@ export async function createShift(body: CreateShiftBody): Promise<PublicShift> {
 }
 
 export async function createBulkShifts(body: BulkCreateShiftsBody): Promise<PublicShift[]> {
-  const response = await fetch(`${API_URL}/shifts/bulk`, {
+  const response = await fetch(`${getApiUrl()}/shifts/bulk`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -256,7 +259,7 @@ export async function createBulkShifts(body: BulkCreateShiftsBody): Promise<Publ
 }
 
 export async function getShift(id: string): Promise<PublicShift> {
-  const response = await fetch(`${API_URL}/shifts/${id}`, {
+  const response = await fetch(`${getApiUrl()}/shifts/${id}`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -271,7 +274,7 @@ export async function getShift(id: string): Promise<PublicShift> {
 }
 
 export async function updateShift(id: string, body: UpdateShiftBody): Promise<PublicShift> {
-  const response = await fetch(`${API_URL}/shifts/${id}`, {
+  const response = await fetch(`${getApiUrl()}/shifts/${id}`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -287,7 +290,7 @@ export async function updateShift(id: string, body: UpdateShiftBody): Promise<Pu
 }
 
 export async function deleteShift(id: string): Promise<void> {
-  const response = await fetch(`${API_URL}/shifts/${id}`, {
+  const response = await fetch(`${getApiUrl()}/shifts/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
@@ -308,7 +311,7 @@ export async function listSickLeave(params?: {
   if (params?.to) search.set('to', params.to);
   const qs = search.toString();
 
-  const response = await fetch(`${API_URL}/sick-leave${qs ? `?${qs}` : ''}`, {
+  const response = await fetch(`${getApiUrl()}/sick-leave${qs ? `?${qs}` : ''}`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -323,7 +326,7 @@ export async function listSickLeave(params?: {
 }
 
 export async function createSickLeave(body: CreateSickLeaveBody): Promise<PublicSickLeave> {
-  const response = await fetch(`${API_URL}/sick-leave`, {
+  const response = await fetch(`${getApiUrl()}/sick-leave`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -338,7 +341,7 @@ export async function createSickLeave(body: CreateSickLeaveBody): Promise<Public
 }
 
 export async function deleteSickLeave(id: string): Promise<void> {
-  const response = await fetch(`${API_URL}/sick-leave/${id}`, {
+  const response = await fetch(`${getApiUrl()}/sick-leave/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
@@ -359,7 +362,7 @@ export async function getMonthlySummary(params: {
   search.set('to', params.to);
   if (params.jobProfileId) search.set('jobProfileId', params.jobProfileId);
 
-  const response = await fetch(`${API_URL}/summaries/monthly?${search}`, {
+  const response = await fetch(`${getApiUrl()}/summaries/monthly?${search}`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -374,7 +377,7 @@ export async function getMonthlySummary(params: {
 }
 
 export async function getTaxSettings(): Promise<PublicTaxSettings | null> {
-  const response = await fetch(`${API_URL}/tax-settings`, {
+  const response = await fetch(`${getApiUrl()}/tax-settings`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -389,7 +392,7 @@ export async function getTaxSettings(): Promise<PublicTaxSettings | null> {
 }
 
 export async function upsertTaxSettings(body: UpsertTaxSettingsBody): Promise<PublicTaxSettings> {
-  const response = await fetch(`${API_URL}/tax-settings`, {
+  const response = await fetch(`${getApiUrl()}/tax-settings`, {
     method: 'PUT',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -405,7 +408,7 @@ export async function upsertTaxSettings(body: UpsertTaxSettingsBody): Promise<Pu
 }
 
 export async function listCollectiveAgreements(): Promise<PublicAgreement[]> {
-  const response = await fetch(`${API_URL}/collective-agreements`, {
+  const response = await fetch(`${getApiUrl()}/collective-agreements`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -420,7 +423,7 @@ export async function listCollectiveAgreements(): Promise<PublicAgreement[]> {
 }
 
 export async function createBillingCheckout(): Promise<{ url: string }> {
-  const response = await fetch(`${API_URL}/billing/checkout`, {
+  const response = await fetch(`${getApiUrl()}/billing/checkout`, {
     method: 'POST',
     headers: authHeaders(),
   });
@@ -435,7 +438,7 @@ export async function createBillingCheckout(): Promise<{ url: string }> {
 }
 
 export async function createBillingPortal(): Promise<{ url: string }> {
-  const response = await fetch(`${API_URL}/billing/portal`, {
+  const response = await fetch(`${getApiUrl()}/billing/portal`, {
     method: 'POST',
     headers: authHeaders(),
   });
@@ -450,7 +453,7 @@ export async function createBillingPortal(): Promise<{ url: string }> {
 }
 
 export async function getSalaryGoal(): Promise<SalaryGoal> {
-  const response = await fetch(`${API_URL}/salary-goal`, {
+  const response = await fetch(`${getApiUrl()}/salary-goal`, {
     method: 'GET',
     headers: authHeaders(),
   });
@@ -465,7 +468,7 @@ export async function getSalaryGoal(): Promise<SalaryGoal> {
 }
 
 export async function upsertSalaryGoal(body: SalaryGoal): Promise<SalaryGoal> {
-  const response = await fetch(`${API_URL}/salary-goal`, {
+  const response = await fetch(`${getApiUrl()}/salary-goal`, {
     method: 'PUT',
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -493,7 +496,7 @@ export async function downloadMonthlySummaryPdf(params: {
   const token = getToken();
   if (!token) throw new Error('Ingen token - Logga in igen');
 
-  const response = await fetch(`${API_URL}/summaries/monthly/pdf?${search}`, {
+  const response = await fetch(`${getApiUrl()}/summaries/monthly/pdf?${search}`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
   });

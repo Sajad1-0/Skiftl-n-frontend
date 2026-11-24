@@ -2,26 +2,17 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
+import { JobProfileForm } from '@/components/job-profiles/job-profile-form';
 import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthUser } from '@/hooks/use-auth-user';
-import { getJobProfile, updateJobProfile, listCollectiveAgreements } from '@/lib/api';
-import { kronorToOre, oreToKronor } from '@/lib/money';
-import { parseOptionalTaxRateInput } from '@/lib/tax-rate';
+import { getJobProfile, listCollectiveAgreements, updateJobProfile } from '@/lib/api';
+import { jobProfileToFormDefaults } from '@/lib/job-profile-form';
 import type { PublicAgreement, PublicJobProfile } from '@/lib/types';
-
-interface FormState {
-  error: string | null;
-}
-
-const initialState: FormState = { error: null };
 
 export default function EditJobProfilePage() {
   const params = useParams<{ id: string }>();
@@ -64,51 +55,6 @@ export default function EditJobProfilePage() {
     };
   }, [user, profileId]);
 
-  const [state, formAction, isPending] = useActionState(
-    async (_prev: FormState, formData: FormData): Promise<FormState> => {
-      const name = String(formData.get('name') ?? '').trim();
-      const employerName = String(formData.get('employerName') ?? '').trim();
-      const hourlyWageKronor = Number(formData.get('hourlyWageKronor'));
-      const taxRateParsed = parseOptionalTaxRateInput(formData.get('taxRate'));
-      const isPrimary = formData.get('isPrimary') === 'on';
-      const agreementRaw = String(formData.get('collectiveAgreementId') ?? '').trim();
-
-      if (name.length < 2) {
-        return { error: 'Namn måste vara minst 2 tecken' };
-      }
-
-      if (!Number.isFinite(hourlyWageKronor) || hourlyWageKronor <= 0) {
-        return { error: 'Ange en giltig timlön i kronor' };
-      }
-
-      if (!taxRateParsed.ok) {
-        return { error: taxRateParsed.error };
-      }
-
-      if (employerName.length > 0 && employerName.length < 2) {
-        return { error: 'Arbetsgivare måste vara minst 2 tecken' };
-      }
-
-      try {
-        await updateJobProfile(profileId, {
-          name,
-          hourlyWage: kronorToOre(hourlyWageKronor),
-          taxRate: taxRateParsed.value,
-          employerName: employerName.length === 0 ? null : employerName,
-          isPrimary,
-          collectiveAgreementId: agreementRaw.length > 0 ? agreementRaw : null,
-        });
-        router.push('/job-profiles');
-        return { error: null };
-      } catch (error) {
-        return {
-          error: error instanceof Error ? error.message : 'Kunde inte uppdatera jobbprofil',
-        };
-      }
-    },
-    initialState,
-  );
-
   if (authLoading || (user && loading)) {
     return <PageLoading label="Laddar…" userName={userName} />;
   }
@@ -145,104 +91,24 @@ export default function EditJobProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={formAction} className="flex flex-col gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Namn</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  minLength={2}
-                  defaultValue={profile.name}
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="hourlyWageKronor">Timlön</Label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">
-                    SEK
-                  </span>
-                  <Input
-                    id="hourlyWageKronor"
-                    name="hourlyWageKronor"
-                    type="number"
-                    required
-                    min={1}
-                    step="0.01"
-                    defaultValue={oreToKronor(profile.hourlyWage)}
-                    className="h-11 pl-12"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="taxRate">Skattesats (%) — valfritt</Label>
-                <Input
-                  id="taxRate"
-                  name="taxRate"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step="0.01"
-                  defaultValue={profile.taxRate != null ? Number(profile.taxRate) : undefined}
-                  placeholder="30"
-                  className="h-11"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Schablon för netto utan tabell. Premium: lämna tomt och använd Skatteverkets
-                  tabell under Skatt.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="employerName">Arbetsgivare (valfritt)</Label>
-                <Input
-                  id="employerName"
-                  name="employerName"
-                  type="text"
-                  defaultValue={profile.employerName ?? ''}
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="collectiveAgreementId">Kollektivavtal (valfritt)</Label>
-                <select
-                  name="collectiveAgreementId"
-                  id="collectiveAgreementId"
-                  className="flex h-11 w-full rounded-md border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  defaultValue={profile.collectiveAgreementId ?? ''}
-                >
-                  <option value="">Ingen OB</option>
-                  {orphanAgreementId ? (
-                    <option value={orphanAgreementId}>Nuvarande avtal (kunde inte laddas)</option>
-                  ) : null}
-                  {agreements.map((agreement) => (
-                    <option key={agreement.id} value={agreement.id}>
-                      {agreement.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <input
-                  name="isPrimary"
-                  type="checkbox"
-                  defaultChecked={profile.isPrimary}
-                  className="size-4 rounded border-input"
-                />
-                Sätt som primär profil
-              </label>
-
-              {state.error ? <PageError message={state.error} /> : null}
-              <Button type="submit" disabled={isPending} size="lg" className="h-11 w-full">
-                {isPending ? 'Sparar…' : 'Spara ändringar'}
-              </Button>
-            </form>
+            <JobProfileForm
+              key={profile.id}
+              agreements={agreements}
+              initialValues={jobProfileToFormDefaults(profile)}
+              orphanAgreementId={orphanAgreementId}
+              submitLabel="Spara ändringar"
+              onSubmit={async (data) => {
+                await updateJobProfile(profileId, {
+                  name: data.name,
+                  hourlyWage: data.hourlyWage,
+                  taxRate: data.taxRate,
+                  employerName: data.employerName,
+                  isPrimary: data.isPrimary,
+                  collectiveAgreementId: data.collectiveAgreementId,
+                });
+                router.push('/job-profiles');
+              }}
+            />
 
             <p className="mt-6 text-sm text-muted-foreground">
               <Link href="/job-profiles" className="underline-offset-4 hover:underline">
