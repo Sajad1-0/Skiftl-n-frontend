@@ -56,7 +56,7 @@ export default function NewJobProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>Skapa jobbprofil</CardTitle>
-            <CardDescription>Ange timlön i kronor. Vi sparar den som öre i API:t.</CardDescription>
+            <CardDescription>Ange timlön i kronor. Vi sparar den som öre.</CardDescription>
           </CardHeader>
           <CardContent>
             {blockedReason ? (
