@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
-import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { MonthPicker } from '@/components/history/month-picker';
+import { PremiumFeatureGate } from '@/components/premium/premium-feature-gate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthUser } from '@/hooks/use-auth-user';
@@ -20,7 +20,6 @@ import {
 } from '@/lib/month-bounds';
 import { formatKronor, formatOptionalKronor } from '@/lib/money';
 import type { MonthlySummary } from '@/lib/types';
-import PremiumPaywall from '@/components/premium/premium-paywall';
 
 function SummaryColumn({ title, summary }: { title: string; summary: MonthlySummary | null }) {
   const hours = summary ? summary.workedMinutes / 60 : 0;
@@ -109,26 +108,20 @@ export default function CompareMonthPage() {
     return <AuthRequired />;
   }
 
-  if (!user.isPremium) {
-    return (
-      <AppShell userName={userName}>
-        <PremiumPaywall
-          featureId="history"
-          detail="Jämförelse av två månader ingår i Premium (senaste 6 månaderna)."
-          backHref="/summary"
-          backLabel="Tillbaka till sammanfattning"
-        />
-      </AppShell>
-    );
-  }
-
   const deltaNet =
     summaryA?.netOre != null && summaryB?.netOre != null
       ? summaryB.netOre - summaryA.netOre
       : null;
 
   return (
-    <AppShell userName={userName}>
+    <PremiumFeatureGate
+      isPremium={user.isPremium}
+      userName={userName}
+      featureId="history"
+      detail="Jämförelse av två månader ingår i Premium (senaste 6 månaderna)."
+      backHref="/summary"
+      backLabel="Tillbaka till sammanfattning"
+    >
       <FadeIn className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -162,6 +155,6 @@ export default function CompareMonthPage() {
           </CardContent>
         </Card>
       </FadeIn>
-    </AppShell>
+    </PremiumFeatureGate>
   );
 }

@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
 import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
-import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
+import { PremiumFeatureGate } from '@/components/premium/premium-feature-gate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { useAuthUser } from '@/hooks/use-auth-user';
 import { getSalaryGoal, upsertSalaryGoal } from '@/lib/api';
 import { kronorToOre, oreToKronor } from '@/lib/money';
-import PremiumPaywall from '@/components/premium/premium-paywall';
 
 interface FormState {
   error: string | null;
@@ -107,21 +106,15 @@ export default function SalaryGoalPage() {
     return <AuthRequired />;
   }
 
-  if (!user.isPremium) {
-    return (
-      <AppShell userName={userName}>
-        <PremiumPaywall
-          featureId="goal"
-          detail="Sätt ett månatligt nettomål och följ progress + timmar kvar."
-          backHref="/summary"
-          backLabel="Tillbaka till sammanfattning"
-        />
-      </AppShell>
-    );
-  }
-
   return (
-    <AppShell userName={userName}>
+    <PremiumFeatureGate
+      isPremium={user.isPremium}
+      userName={userName}
+      featureId="goal"
+      detail="Sätt ett månatligt nettomål och följ progress + timmar kvar."
+      backHref="/summary"
+      backLabel="Tillbaka till sammanfattning"
+    >
       <FadeIn className="mx-auto w-full max-w-lg">
         <Card>
           <CardHeader>
@@ -166,6 +159,6 @@ export default function SalaryGoalPage() {
           </CardContent>
         </Card>
       </FadeIn>
-    </AppShell>
+    </PremiumFeatureGate>
   );
 }
