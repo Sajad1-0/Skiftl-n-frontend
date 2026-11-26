@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useActionState } from 'react';
 import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
-import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
-import PremiumPaywall from '@/components/premium/premium-paywall';
+import { PremiumFeatureGate } from '@/components/premium/premium-feature-gate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -66,16 +65,14 @@ export default function NewSickLeavePage() {
   if (isLoading) return <PageLoading label="Laddar..." userName={userName} />;
   if (!user) return <AuthRequired />;
 
-  if (!user.isPremium) {
-    return (
-      <AppShell userName={userName}>
-        <PremiumPaywall featureId="sick" backHref="/sick-leave" backLabel="Tillbaka" />
-      </AppShell>
-    );
-  }
-
   return (
-    <AppShell userName={userName}>
+    <PremiumFeatureGate
+      isPremium={user.isPremium}
+      userName={userName}
+      featureId="sick"
+      backHref="/sick-leave"
+      backLabel="Tillbaka"
+    >
       <FadeIn>
         <Card>
           <CardHeader>
@@ -147,6 +144,6 @@ export default function NewSickLeavePage() {
           </CardContent>
         </Card>
       </FadeIn>
-    </AppShell>
+    </PremiumFeatureGate>
   );
 }

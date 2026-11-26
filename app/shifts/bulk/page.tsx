@@ -6,12 +6,13 @@ import { useEffect, useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
-import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
+import { PremiumFeatureGate } from '@/components/premium/premium-feature-gate';
 import BreakIntervalsEditor, {
   prepareBreakIntervals,
   type BreakIntervalDraft,
 } from '@/components/shifts/break-intervals-editor';
+import { DatetimeLocalFields } from '@/components/shifts/datetime-local-fields';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,8 +22,6 @@ import { useJobProfiles } from '@/hooks/use-job-profiles';
 import { createBulkShifts } from '@/lib/api';
 import { localInputToIso, syncEndAtFromStart } from '@/lib/shift-datetime';
 import type { BulkCreateShiftsBody } from '@/lib/types';
-import PremiumPaywall from '@/components/premium/premium-paywall';
-import { DatetimeLocalFields } from '@/components/shifts/datetime-local-fields';
 
 
 const MAX_ROWS = 10;
@@ -149,21 +148,16 @@ export default function BulkShiftsPage() {
   if (!user) {
     return <AuthRequired />;
   }
-  if (!user.isPremium) {
-    return (
-      <AppShell userName={userName}>
-        <PremiumPaywall
-          featureId="bulk"
-          detail={`Logga upp till ${MAX_ROWS} pass samtidigt. Free loggar ett pass i taget.`}
-          backHref="/shifts/new"
-          backLabel="Logga ett pass"
-        />
-      </AppShell>
-    );
-  }
 
   return (
-    <AppShell userName={userName}>
+    <PremiumFeatureGate
+      isPremium={user.isPremium}
+      userName={userName}
+      featureId="bulk"
+      detail={`Logga upp till ${MAX_ROWS} pass samtidigt. Free loggar ett pass i taget.`}
+      backHref="/shifts/new"
+      backLabel="Logga ett pass"
+    >
       <FadeIn>
         <Card>
           <CardHeader>
@@ -288,6 +282,6 @@ export default function BulkShiftsPage() {
           </CardContent>
         </Card>
       </FadeIn>
-    </AppShell>
+    </PremiumFeatureGate>
   );
 }

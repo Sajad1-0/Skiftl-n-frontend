@@ -5,9 +5,9 @@ import { useEffect, useState, useTransition } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
-import { AppShell } from '@/components/layout/app-shell';
 import { FadeIn } from '@/components/motion/fade-in';
 import { MonthPicker } from '@/components/history/month-picker';
+import { PremiumFeatureGate } from '@/components/premium/premium-feature-gate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -29,7 +29,6 @@ import {
 } from '@/lib/month-bounds';
 import { formatKronor } from '@/lib/money';
 import type { PublicSickLeave } from '@/lib/types';
-import PremiumPaywall from '@/components/premium/premium-paywall';
 
 export default function SickLeavePage() {
   const { user, userName, isLoading: authLoading } = useAuthUser();
@@ -87,16 +86,15 @@ export default function SickLeavePage() {
     return <PageLoading label="Laddar sjukanmälan…" userName={userName} />;
   }
   if (!user) return <AuthRequired />;
-  if (!user.isPremium) {
-    return (
-      <AppShell userName={userName}>
-        <PremiumPaywall featureId="sick" backHref="/shifts" backLabel="Tillbaka till pass" />
-      </AppShell>
-    );
-  }
 
   return (
-    <AppShell userName={userName}>
+    <PremiumFeatureGate
+      isPremium={user.isPremium}
+      userName={userName}
+      featureId="sick"
+      backHref="/shifts"
+      backLabel="Tillbaka till pass"
+    >
       <FadeIn className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -178,6 +176,6 @@ export default function SickLeavePage() {
           </CardContent>
         </Card>
       </FadeIn>
-    </AppShell>
+    </PremiumFeatureGate>
   );
 }
