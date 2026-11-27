@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
@@ -18,57 +18,35 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useAuthUser } from '@/hooks/use-auth-user';
+import { useMonthScopedFetch } from '@/hooks/use-month-scoped-fetch';
 import { profileNameById, useJobProfiles } from '@/hooks/use-job-profiles';
 import { deleteSickLeave, listSickLeave } from '@/lib/api';
-import {
-  currentYearMonth,
-  formatYearMonthSv,
-  monthBoundsFor,
-  type YearMonth,
-} from '@/lib/month-bounds';
+import { formatYearMonthSv, monthBoundsFor } from '@/lib/month-bounds';
 import { formatKronor } from '@/lib/money';
 import type { PublicSickLeave } from '@/lib/types';
 
+const EMPTY_PERIODS: PublicSickLeave[] = [];
+
 export default function SickLeavePage() {
-  const { user, userName, isLoading: authLoading } = useAuthUser();
+  const {
+    user,
+    userName,
+    data: periods,
+    isLoading,
+    error,
+    selectedMonth,
+    setSelectedMonth,
+    setData: setPeriods,
+    setError,
+  } = useMonthScopedFetch<PublicSickLeave[]>({
+    fetchMonth: (month) => listSickLeave(monthBoundsFor(month)),
+    emptyValue: EMPTY_PERIODS,
+    errorFallback: 'Kunde inte ladda sjukanmälningar',
+    requirePremium: true,
+  });
+
   const { profiles } = useJobProfiles({ enabled: !!user?.isPremium, softFail: true });
-  const [selectedMonth, setSelectedMonth] = useState<YearMonth>(currentYearMonth);
-  const [periods, setPeriods] = useState<PublicSickLeave[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  const loadKey = user?.isPremium
-    ? `${user.id}:${selectedMonth.year}-${selectedMonth.month}`
-    : null;
-  const [loadedKey, setLoadedKey] = useState<string | null>(null);
-  const dataLoading = loadKey !== null && loadKey !== loadedKey;
-
-  useEffect(() => {
-    if (!loadKey) return;
-
-    let cancelled = false;
-
-    async function load() {
-      try {
-        const list = await listSickLeave(monthBoundsFor(selectedMonth));
-        if (!cancelled) {
-          setPeriods(list);
-          setError(null);
-          setLoadedKey(loadKey);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Kunde inte ladda sjukanmälningar');
-          setLoadedKey(loadKey);
-        }
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [loadKey, selectedMonth]);
 
   function handleDelete(id: string) {
     if (!window.confirm('Ta bort denna sjukperiod?')) return;
@@ -82,7 +60,7 @@ export default function SickLeavePage() {
     });
   }
 
-  if (authLoading || dataLoading) {
+  if (isLoading) {
     return <PageLoading label="Laddar sjukanmälan…" userName={userName} />;
   }
   if (!user) return <AuthRequired />;
