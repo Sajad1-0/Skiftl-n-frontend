@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { AuthRequired, PageError } from '@/components/feedback/page-error';
 import { PageLoading } from '@/components/feedback/page-loading';
 import { FadeIn } from '@/components/motion/fade-in';
@@ -10,16 +10,25 @@ import { PremiumFeatureGate } from '@/components/premium/premium-feature-gate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthUser } from '@/hooks/use-auth-user';
+import { useKeyedFetch } from '@/hooks/use-keyed-fetch';
 import { getMonthlySummary } from '@/lib/api';
 import {
   currentYearMonth,
   formatYearMonthSv,
   listSelectableMonths,
   monthBoundsFor,
+  yearMonthKey,
   type YearMonth,
 } from '@/lib/month-bounds';
 import { formatKronor, formatOptionalKronor } from '@/lib/money';
 import type { MonthlySummary } from '@/lib/types';
+
+interface CompareSummaries {
+  summaryA: MonthlySummary | null;
+  summaryB: MonthlySummary | null;
+}
+
+const EMPTY_COMPARE: CompareSummaries = { summaryA: null, summaryB: null };
 
 function SummaryColumn({ title, summary }: { title: string; summary: MonthlySummary | null }) {
   const hours = summary ? summary.workedMinutes / 60 : 0;
@@ -60,47 +69,32 @@ export default function CompareMonthPage() {
   const months = listSelectableMonths();
   const [monthA, setMonthA] = useState<YearMonth>(months[1] ?? currentYearMonth());
   const [monthB, setMonthB] = useState<YearMonth>(months[0] ?? currentYearMonth());
-  const [summaryA, setSummaryA] = useState<MonthlySummary | null>(null);
-  const [summaryB, setSummaryB] = useState<MonthlySummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const loadKey = `${monthA.year}-${monthA.month}_${monthB.year}-${monthB.month}`;
-  const [loadedKey, setLoadedKey] = useState<string | null>(null);
-  const loading = user?.isPremium === true && loadedKey !== loadKey;
 
-  useEffect(() => {
-    if (!user?.isPremium) return;
+  const monthsRef = useRef({ monthA, monthB });
+  // eslint-disable-next-line react-hooks/refs
+  monthsRef.current = { monthA, monthB };
 
-    let cancelled = false;
+  const loadKey = user?.isPremium ? `${yearMonthKey(monthA)}_${yearMonthKey(monthB)}` : null;
 
-    async function load() {
-      try {
-        const [a, b] = await Promise.all([
-          getMonthlySummary(monthBoundsFor(monthA)),
-          getMonthlySummary(monthBoundsFor(monthB)),
-        ]);
-        if (!cancelled) {
-          setSummaryA(a);
-          setSummaryB(b);
-          setError(null);
-          setLoadedKey(loadKey);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setSummaryA(null);
-          setSummaryB(null);
-          setError(err instanceof Error ? err.message : 'Kunde inte jämföra');
-          setLoadedKey(loadKey);
-        }
-      }
-    }
+  const {
+    data,
+    isLoading: dataLoading,
+    error,
+  } = useKeyedFetch<CompareSummaries>({
+    key: loadKey,
+    fetcher: async () => {
+      const { monthA: a, monthB: b } = monthsRef.current;
+      const [summaryA, summaryB] = await Promise.all([
+        getMonthlySummary(monthBoundsFor(a)),
+        getMonthlySummary(monthBoundsFor(b)),
+      ]);
+      return { summaryA, summaryB };
+    },
+    emptyValue: EMPTY_COMPARE,
+    errorFallback: 'Kunde inte jämföra',
+  });
 
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [user, monthA, monthB, loadKey]);
-
-  if (authLoading || loading) {
+  if (authLoading || dataLoading) {
     return <PageLoading label="Laddar jämförelse..." userName={userName} />;
   }
 
@@ -108,10 +102,9 @@ export default function CompareMonthPage() {
     return <AuthRequired />;
   }
 
+  const { summaryA, summaryB } = data;
   const deltaNet =
-    summaryA?.netOre != null && summaryB?.netOre != null
-      ? summaryB.netOre - summaryA.netOre
-      : null;
+    summaryA?.netOre != null && summaryB?.netOre != null ? summaryB.netOre - summaryA.netOre : null;
 
   return (
     <PremiumFeatureGate
@@ -149,9 +142,7 @@ export default function CompareMonthPage() {
             <CardDescription>Netto</CardDescription>
           </CardHeader>
           <CardContent className="text-lg font-semibold tabular-nums">
-            {deltaNet == null
-              ? '—'
-              : `${deltaNet >= 0 ? '+' : ''}${formatKronor(deltaNet)}`}
+            {deltaNet == null ? '—' : `${deltaNet >= 0 ? '+' : ''}${formatKronor(deltaNet)}`}
           </CardContent>
         </Card>
       </FadeIn>
